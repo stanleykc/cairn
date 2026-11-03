@@ -1,0 +1,89 @@
+"""Shared helpers. Only synthetic names are used (Principle VIII)."""
+
+from __future__ import annotations
+
+import hashlib
+import os
+import shutil
+import subprocess
+import sys
+from importlib.resources import files
+from pathlib import Path
+
+import pytest
+
+ACME = "Acme"
+GLOBEX = "Globex"
+GLOBEX_CORP = "Globex Corporation"
+FALCON = "Falcon"
+FULFILLMENT = "Fulfillment Review"
+PRICING = "Pricing Study"
+LEAD = "Test Lead"
+
+ACME_ID = "acme-fulfillment-review"
+INIT_ACME = ("init", "--engagement", FULFILLMENT, "--client", ACME, "--lead", LEAD)
+
+PACKAGE_ASSETS = Path(str(files("cairn") / "assets"))
+
+
+def make_git_env(tmp_path: Path) -> dict[str, str]:
+    config = tmp_path / "gitconfig"
+    config.write_text(
+        "[user]\n\tname = Test Lead\n\temail = test-lead@example.invalid\n"
+        "[init]\n\tdefaultBranch = main\n"
+    )
+    env = dict(os.environ)
+    env.update(GIT_CONFIG_GLOBAL=str(config), GIT_CONFIG_NOSYSTEM="1")
+    for key in ("CAIRN_ASSETS_DIR", "CAIRN_FRAMEWORK_VERSION"):
+        env.pop(key, None)
+    return env
+
+
+@pytest.fixture
+def git_env(tmp_path) -> dict[str, str]:
+    """Environment with a synthetic git identity and no system git config."""
+    return make_git_env(tmp_path)
+
+
+def run_cairn(*args, cwd, env=None, input=None) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        [sys.executable, "-m", "cairn", *map(str, args)],
+        cwd=cwd,
+        env=env,
+        input=input,
+        stdin=subprocess.DEVNULL if input is None else None,
+        capture_output=True,
+        text=True,
+    )
+
+
+def tree_hash(path: Path, exclude=()) -> dict[str, str]:
+    """Map each file's relative POSIX path to its SHA-256, skipping excluded prefixes."""
+    path = Path(path)
+    result = {}
+    for file in sorted(path.rglob("*")):
+        if not file.is_file():
+            continue
+        rel = file.relative_to(path).as_posix()
+        if any(rel == e or rel.startswith(e.rstrip("/") + "/") for e in exclude):
+            continue
+        result[rel] = hashlib.sha256(file.read_bytes()).hexdigest()
+    return result
+
+
+def fixture_assets(tmp_path: Path, version="0.1.0", skills=None, name="assets") -> dict[str, str]:
+    """Copy the package assets to `tmp_path/name`, add `skills`, and return env additions.
+
+    `skills` maps a skill name to its SKILL.md text, or to a dict of relative path → text.
+    """
+    root = tmp_path / name
+    if root.exists():
+        shutil.rmtree(root)
+    shutil.copytree(PACKAGE_ASSETS, root)
+    for skill, content in (skills or {}).items():
+        entries = content if isinstance(content, dict) else {"SKILL.md": content}
+        for rel, text in entries.items():
+            dest = root / "skills" / skill / rel
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_text(text)
+    return {"CAIRN_ASSETS_DIR": str(root), "CAIRN_FRAMEWORK_VERSION": version}

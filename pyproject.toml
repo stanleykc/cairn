@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cairn"
+description = "Curated Analysis, Insight and Recommendation Network: engagement tooling"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+dynamic = ["version"]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest", "PyYAML"]
+
+[project.scripts]
+cairn = "cairn.cli:main"
+
+[tool.hatch.version]
+path = "src/cairn/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cairn"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
