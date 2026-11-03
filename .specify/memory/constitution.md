@@ -44,6 +44,11 @@ trail can be trusted.
 - Every finding, issue, opportunity, option and recommendation MUST link down to the
   observations that support it, and MUST list contradicting observations where they exist.
 - A claim without a citation MUST NOT be promoted to active.
+- In this principle, a *claim* is an evidence claim: an observation, or anything built on
+  observations (findings, issues, opportunities, options, recommendations). Charter framing
+  items (questions, hypotheses, assumptions) assert nothing about the sources. They are
+  recorded with origin *consultant note* or *LLM inference*, cite no source, and may become
+  active on the consultant's approval. Later skills link them to evidence.
 
 **Rationale:** Traceability is built in by construction, not reconstructed afterwards. Any
 conclusion can be checked against its evidence.
@@ -135,7 +140,7 @@ report why rather than produce non-compliant output.
 ### Rules every skill follows
 
 1. Never modify anything in `10-sources/raw/`.
-2. Cite every claim with a source ID and a locator (page, slide, timestamp, URL).
+2. Cite every evidence claim with a source ID and a locator (page, slide, timestamp, URL).
 3. Mark anything the model inferred, rather than read, as origin *LLM inference*.
 4. Write new objects as *proposed*, to `_inbox/` where the pipeline shows it, using the
    templates in `_templates/`.
@@ -188,8 +193,8 @@ Skills MUST read and write the engagement folder layout defined in the framework
   - Phase 3: options, challenge, deliverable drafting, traceability checking. After Phase 3,
     decide whether a dedicated platform is warranted (Principle I).
 - **Review.** Every skill change MUST be reviewed against the Skill Contract before merge,
-  including a check that sample output carries citations, provenance, `proposed` status and
-  ID-only links.
+  including a check that sample output carries citations (for evidence claims), provenance,
+  `proposed` status and ID-only links.
 
 ## Governance
 
@@ -209,4 +214,4 @@ Skills MUST read and write the engagement folder layout defined in the framework
 - The full framework design (data model, pipeline, skill catalogue, analyst workflow) is the
   runtime guidance for applying these principles; it is maintained alongside this document.
 
-**Version**: 1.0.0 | **Ratified**: 2026-11-03 | **Last Amended**: 2026-11-03
+**Version**: 1.0.1 | **Ratified**: 2026-11-03 | **Last Amended**: 2026-11-03
