@@ -198,24 +198,29 @@ framework-provided files changed and every content file is byte-for-byte identic
   form unless the consultant supplies a folder name explicitly.
 - **FR-003**: The command MUST accept all inputs as arguments for unattended use, and MUST
   prompt for any missing required input when run interactively.
-- **FR-004**: The command MUST create every folder in the constitution's canonical
-  engagement layout, and no others.
+- **FR-004**: The command MUST create every content folder in the constitution's canonical
+  engagement layout, and no other content folders. Hidden tool folders (`.claude/`,
+  `.cairn/`, `.git/`) are not content folders.
 - **FR-005**: The command MUST create seed files: `README.md`; an engagement record; the six
   charter files in `00-charter/`; `10-sources/index.md`; and `decisions.md`, `lessons.md` and
   `changelog.md` in `60-log/`. Seed files MUST contain headings, guidance and front matter
   only, and no objects.
 - **FR-006**: The command MUST populate `_templates/` with one template per object type,
   taken from the framework's master templates. Each template MUST include the standard
-  fields (ID, type, status, origin, confidence with reason, audience, links, created date)
-  and MUST default to status `proposed` and audience `internal`.
+  fields (ID, type, status, origin, confidence with reason, LLM-inference confirmation,
+  audience, links, created date) and MUST default to status `proposed`, audience `internal`
+  and LLM-inference confirmation `false`.
 - **FR-007**: The command MUST NOT create any numbered object, so the first ID of every type
   assigned in the engagement is `-001`.
 - **FR-008**: The engagement record MUST capture: engagement name, client name or code
   name, lead consultant, team members (optional), start date, creation date, framework
   version, and model-use policy.
-- **FR-009**: Every file the command creates MUST be plain markdown, with YAML front matter
-  where the file describes an object or the engagement. The command MUST NOT create a
-  database, server, or proprietary-format file as a system of record.
+- **FR-009**: Every content file the command creates (the seed files and templates) MUST be
+  plain markdown, with YAML front matter where the file describes an object or the
+  engagement. Markdown is the preferred format for all engagement content. Tool bookkeeping
+  in `.cairn/`, version-control files, empty `.gitkeep` placeholders and the files of copied
+  skills are not content files. The command MUST NOT create a database, server, or
+  proprietary-format file as a system of record.
 - **FR-010**: On success, the command MUST print a summary of what it created and the
   next steps: confirm the model-use policy, run `charter`, and add originals to
   `10-sources/raw/`.

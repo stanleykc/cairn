@@ -74,6 +74,7 @@ from `src/cairn/assets/templates/`.
 | `origin` | `client-document` \| `interview-meeting` \| `external-research` \| `prior-engagement` \| `llm-inference` \| `consultant-note` | `""` |
 | `confidence` | `high` \| `medium` \| `low` | `""` |
 | `confidence_reason` | one line | `""` |
+| `inference_confirmed` | `true` \| `false`. Only the consultant sets `true`, after checking an `origin: llm-inference` item against a source (Principle IV). It is ignored for other origins. | `false` |
 | `audience` | `internal` \| `client-ready` | `internal` |
 | `supports` | list of IDs | `[]` |
 | `contradicts` | list of IDs | `[]` |
@@ -102,6 +103,11 @@ by hand can see them without other documentation.
 | decision | `D` | entry | `60-log/decisions.md` | `decides` (X/H-IDs), `outcome` (accepted/rejected/deferred), `rationale`, `decided_by`, `decided_on` |
 | lesson | `L` | entry | `60-log/lessons.md` | `polarity` (positive/negative), `learned_from` (D/X/H-IDs), `anonymized` (bool), `share_approved` (bool) |
 
+**Naming**: the spec's "research result" is the `research` type. There is no separate
+"recommendation" type: a recommendation is an option the consultant accepted, recorded by a
+decision (`D-###`) with `outcome: accepted`. Constitution Principle III's linking rule for
+recommendations therefore applies to options.
+
 **File-form template**: YAML front matter with the standard and extra fields, then body
 headings for the type (for example, an observation's body is the single claim, and a
 finding has `## So what`, `## Evidence`, `## Contradicting evidence`).
@@ -118,7 +124,7 @@ entries), contains every standard field, and has `status: proposed` and
 ~~~text
 proposed --consultant--> active --consultant--> superseded | rejected
 proposed --consultant--> rejected
-audience: internal --consultant only--> client-ready   (never when origin = llm-inference and unconfirmed)
+audience: internal --consultant only--> client-ready   (never when origin = llm-inference and inference_confirmed = false)
 ~~~
 
 ## 4. Seed files
@@ -128,7 +134,7 @@ guidance and front matter, and no objects (FR-005).
 
 | Path | Front matter | Body |
 |---|---|---|
-| `README.md` | none | Engagement name, layout table, status and provenance rules, ID prefixes (examples written as `O-###`, never a real number), the daily triage habit, available skills (generated from the copied skills, or "none installed yet; run `cairn refresh` after updating the framework"), and a **model-use warning block** when `model_use: unconfirmed` (FR-011, FR-015) |
+| `README.md` | none | Engagement name, layout table, status and provenance rules, ID prefixes (examples written as `O-###`, never a real number), the daily triage habit, skills available **as of creation** (generated from the copied skills, or "none installed yet"), followed by a note that `.claude/skills/` holds the current set and that `cairn refresh` may add skills not listed here, and a **model-use warning block** when `model_use: unconfirmed` (FR-011, FR-015) |
 | `engagement.md` | engagement record (§2) | One line explaining each field |
 | `00-charter/scope.md` | `type: charter-scope`, `model_use` | Objectives, Boundaries, Deliverables, Timeline, **Model use** (shows the policy and says `engagement.md` is authoritative) |
 | `00-charter/questions.md` | `type: collection`, `holds: question` | Guidance + "No questions yet" |

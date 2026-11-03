@@ -241,6 +241,16 @@ NEEDS CLARIFICATION items. Each decision below settles a design choice the spec 
     prove nothing changed (SC-004).
   - Fault injection: monkeypatch a write to fail after N files, then assert the folder is
     back to its state before the run (FR-017).
+  - Fixture framework: two test-only environment variables, read only in `layout.py`, let
+    a subprocess run use a temporary copy of the assets at another version.
+    `CAIRN_ASSETS_DIR` replaces the package assets folder, and `CAIRN_FRAMEWORK_VERSION`
+    replaces `cairn.__version__`. This is how R20 adds a fixture skill and quickstart §8
+    bumps the framework to 0.2.0.
+  - The real-ID check uses only the 12 type prefixes (`\b[SOQHARFIPXDL]-\d{3}\b`). In a
+    rendered engagement it skips `README.md` and `engagement.md`, which hold names the
+    consultant typed. The unrendered seed files are checked instead.
+  - Tests run in a virtual environment (`.venv`), because Homebrew's Python is externally
+    managed (PEP 668).
 - **Rationale**: Each success criterion can be checked automatically. Only synthetic names
   are used, such as "Acme" and "Globex" (Principle VIII).
 

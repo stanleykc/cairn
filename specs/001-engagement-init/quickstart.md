@@ -13,6 +13,8 @@ only synthetic names ("Acme", "Globex"), per Principle VIII. Command details are
 
 ~~~bash
 cd /path/to/cairn
+python3 -m venv .venv                    # Homebrew Python is externally managed (PEP 668)
+source .venv/bin/activate
 python3 -m pip install -e '.[dev]'      # or: uv tool install --editable .  (CLI only)
 cairn --version                          # → cairn 0.1.0
 export WORK="$(mktemp -d)"               # scratch area OUTSIDE the framework repo
@@ -44,8 +46,10 @@ Expected:
 - `README.md`, `engagement.md`, six `00-charter/*.md` files, `10-sources/index.md` and
   three `60-log/*.md` files are present.
 - `_templates/` holds 12 files, each with `status: proposed` and `audience: internal`.
-- `grep -rE '\b[A-Z]-[0-9]{3}\b' acme-fulfillment-review --include='*.md'` finds no real
-  IDs (FR-007).
+- `grep -rE '\b[SOQHARFIPXDL]-[0-9]{3}\b' acme-fulfillment-review --include='*.md'` finds no
+  real IDs (FR-007). The pattern uses only the 12 ID prefixes. A typed name such as
+  "Project X-100" would match in `README.md` or `engagement.md`, which is why
+  `check_layout()` skips those two files and the tests check their unrendered seeds instead.
 - The summary lists next steps and flags the model-use policy as UNCONFIRMED.
 
 ### 2. Interactive prompts (US1-4)
@@ -54,8 +58,8 @@ Expected:
 cd "$WORK" && cairn init
 ~~~
 
-Expected: it asks for engagement name, client, code name, lead and model-use policy, in
-that order, before writing anything. Press Ctrl-C at any prompt: exit code 130, and no
+Expected: it asks for engagement name, client code name, client name, lead and model-use
+policy, in that order (contracts/cli.md), before writing anything. Press Ctrl-C at any prompt: exit code 130, and no
 folder is created.
 
 ### 3. Version control (US1-5, FR-018, FR-021)

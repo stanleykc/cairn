@@ -58,15 +58,15 @@ engagement. Teams of 1–3 analysts plus the lead consultant.
 
 | Principle / rule | How this plan complies | Status |
 |---|---|---|
-| I. Text-first | Every engagement file is markdown with YAML front matter. The script is justified because creating folders, copying files and comparing hashes are deterministic tasks. There is no database or server. `.cairn/manifest.json` is tool bookkeeping that can be rebuilt, not a system of record for engagement content (R8). | Pass |
+| I. Text-first | Every content file the tool creates is markdown with YAML front matter, and markdown is the preferred format for all engagement content (FR-009). The script is justified because creating folders, copying files and comparing hashes are deterministic tasks. There is no database or server. `.cairn/manifest.json` is tool bookkeeping that can be rebuilt, not a system of record for engagement content (R8). | Pass |
 | II. Originals immutable | `init` only creates `10-sources/raw/` if it is missing, and adds a `.gitkeep` only to a raw folder it created itself. In merge mode it never writes into an existing `raw/`. `refresh` never reads or writes outside `_templates/`, the Cairn skills, `.cairn/` and the `framework_version` line. | Pass |
-| III. Atomic, cited evidence | Templates carry `source` + `locator` (observation) and `supported_by` / `contradicted_by` (finding, issue, opportunity, option, hypothesis). No objects are created. | Pass |
-| IV. Provenance | Every template has `origin`, `confidence`, `confidence_reason`. The `derived` flag is on source and observation. | Pass |
+| III. Atomic, cited evidence | Templates carry `source` + `locator` (observation) and `supported_by` / `contradicted_by` (finding, issue, opportunity, option, hypothesis). Findings link directly to supporting and contradicting observations. Issues and opportunities link to findings, so they link down to observations through those findings, and their contradicting observations are the ones the linked findings list. Linking through findings counts as meeting Principle III (decided 2026-11-03). No objects are created. | Pass |
+| IV. Provenance | Every template has `origin`, `confidence`, `confidence_reason` and `inference_confirmed`, which the consultant sets to `true` after checking an `llm-inference` item against a source. The `derived` flag is on source and observation. | Pass |
 | V. Stable IDs | Templates use ID placeholders only, and no numbered object is created, so the first ID of each type is `-001` (FR-007). Links are ID lists. | Pass |
 | VI. Never delete, supersede | `60-log/changelog.md` is seeded. Refresh backs up edited files before replacing them and never deletes consultant content. | Pass |
 | VII. Agents propose (NON-NEGOTIABLE) | Every template defaults to `status: proposed`, `audience: internal`. The tool never sets `active` or `client-ready`. | Pass |
 | VIII. Confidentiality (NON-NEGOTIABLE) | Refuses targets inside the framework repo or inside another engagement. Makes no network calls and adds no remote, and warns if the target sits inside an existing repo that has a remote. Model-use policy defaults to `unconfirmed` and is flagged in the README and summary. Supports a code name. Tests use only synthetic engagements. | Pass |
-| Canonical layout | Creates exactly the constitution's folders. Hidden tool folders (`.git/`, `.claude/`, `.cairn/`) are outside the content layout. FR-019 already requires `.claude/`, so the spec reads FR-004 as covering content folders only (R9). | Pass |
+| Canonical layout | Creates exactly the constitution's folders. Hidden tool folders (`.git/`, `.claude/`, `.cairn/`) are outside the content layout. FR-004 covers content folders only (R9). | Pass |
 | Skill Contract | No skill is built here. Skills are copied as they are. | N/A |
 | Workflow: spec-driven, minimal | Spec exists. Stdlib only, two subcommands, no extra commands (`check` and `dry-run` deferred). | Pass |
 | Workflow: validation on known outcomes | Applies to analysis skills. This feature does no analysis. It is validated with synthetic fixtures and the layout check (SC-002). | N/A |
@@ -107,6 +107,7 @@ src/cairn/
 ├── transaction.py             # records created paths; rollback in reverse order
 ├── gitutil.py                 # git preflight, init, initial commit, remote detection
 ├── textutil.py                # slugify, flat front-matter reader, yaml-safe quoting, sha256
+├── report.py                  # CairnError / UsageError and the run Report (data-model §7)
 └── assets/
     ├── seed/                  # README.md, engagement.md, 00-charter/*, 10-sources/index.md, 60-log/*
     ├── templates/             # 12 master templates, one per object type
@@ -122,6 +123,9 @@ tests/
 **Structure Decision**: A single Python package in `src/` layout, with the framework
 assets stored as package data, so the installed `cairn` command can find them wherever it
 runs (R2, R4). Later Phase 1 features add each skill under `src/cairn/assets/skills/<name>/`.
+`report.py` holds the shared errors and run report so the command modules don't import each
+other. `layout.py` honors two test-only environment variables, `CAIRN_ASSETS_DIR` and
+`CAIRN_FRAMEWORK_VERSION`, so integration tests can run against a fixture framework (R19).
 
 ## Complexity Tracking
 
@@ -138,3 +142,18 @@ No constitution violations. Nothing to justify.
   that repo has a remote (R14, unchanged).
 - **Edited skills get the same protection as edited templates during refresh** (R17,
   unchanged).
+
+## Decisions from Analysis (2026-11-03)
+
+- **Principle III is met by linking through findings.** Issues and opportunities cite
+  findings, and findings cite observations (Constitution Check, row III).
+- **FR-009 covers content files only.** Markdown is preferred for all engagement content.
+  `.cairn/`, git files, `.gitkeep` placeholders and copied skill files are exempt.
+- **FR-004 covers content folders only.** `.claude/`, `.cairn/` and `.git/` are tool
+  folders (R9).
+- **New standard field `inference_confirmed`** (default `false`) records that the consultant
+  checked an `llm-inference` item against a source (Principle IV, data-model §3.1).
+- **Refresh never deletes backups**, even when it fails and restores the original files
+  (contracts/framework-manifest.md → Guarantees).
+- **The README lists skills as of creation** and points to `.claude/skills/` for the
+  current set, because refresh doesn't touch the README (FR-023).
