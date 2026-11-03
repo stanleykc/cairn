@@ -78,7 +78,7 @@ about weekly over a four-week engagement.
 |---|---|---|
 | I. Text-first | The skill is a folder with `SKILL.md`, reference files and one script. The script is used only where a deterministic check beats instructions: ID assignment, link validation, and a two-file consistent write (R2). It reads and writes plain markdown only, with no database or server. | Pass |
 | II. Originals immutable | The skill and the script never open anything under `10-sources/` (R6). FR-021 adds that nothing in `raw/` is modified. | Pass |
-| III. Atomic, cited evidence | Questions, hypotheses and assumptions are framing objects, not evidence claims. A question asserts nothing. A hypothesis is a claim *to be tested* (`active` means "being worked", not "true"). An assumption is by definition held without direct evidence. They come from the consultant (`consultant-note`) and cite no source (FR-019). Linking them to evidence is later skills' job (`supported_by`/`contradicted_by`, `test-hypothesis`). See Complexity Tracking. | Pass (confirmed in clarification 2026-11-03) |
+| III. Atomic, cited evidence | Questions, hypotheses and assumptions are framing objects, not evidence claims. A question asserts nothing. A hypothesis is a claim *to be tested* (`active` means "being worked", not "true"). An assumption is by definition held without direct evidence. They come from the consultant (`consultant-note`) and cite no source (FR-019). Linking them to evidence is later skills' job (`supported_by`/`contradicted_by`, `test-hypothesis`). | Pass (constitution 1.0.1 defines "claim") |
 | IV. Provenance and inference | Every item has `origin` (`consultant-note` or `llm-inference`), `confidence` and a reason. Kept suggestions are `llm-inference`, with a reason starting "Suggested by `charter`". `inference_confirmed` is never set (FR-036). | Pass |
 | V. Stable IDs, link by ID | Next free ID is computed from every mention across the engagement (R9). No reuse. Links are quoted ID lists. Duplicates and malformed IDs are reported, never renumbered. | Pass |
 | VI. Never delete, supersede | Amend, clarify, supersede, correct, reject, relink and scope change are defined in one convention (contracts/change-convention.md). Every event except an in-session amend is logged with date, reason and trigger. Old text is kept on the item or in a quoted changelog block. `refs` flags every linked object. | Pass |
@@ -94,10 +94,8 @@ about weekly over a four-week engagement.
 source ID" and "a claim without a citation MUST NOT be promoted to active". This plan reads
 "claim" as an evidence claim: an observation, or anything built on observations. Charter
 items are framing, and the spec requires that they cite no source (FR-019). Approving a
-hypothesis makes it the working hypothesis. It doesn't assert it is true. If the project
-owner reads III differently, the options are a constitution PATCH clarifying "claim", or
-changing FR-034 so that approval of hypotheses and assumptions is deferred until evidence
-exists. Confirmed by the project owner in clarification (2026-11-03).
+hypothesis makes it the working hypothesis. It doesn't assert it is true. Confirmed by the
+project owner in clarification (2026-11-03) and codified in constitution 1.0.1.
 
 **Post-design re-check (after Phase 1)**: Still passes. The design adds no folders and no
 runtime dependencies. The only deterministic component (the script) is local, has no
@@ -174,7 +172,6 @@ it as a subprocess against fixture engagements for integration tests.
 
 | Item | Why needed | Simpler alternative rejected because |
 |---|---|---|
-| Principle III read as applying to evidence claims, not to charter framing items (confirmed 2026-11-03) | FR-019 requires uncited, consultant-sourced items, and US3 requires approving them to `active` | Requiring citations would make the charter wait for ingestion, which reverses the pipeline (stage 1 comes before stage 2), and the clarification rules out reading kickoff documents |
 | A helper script inside the skill (about 400 lines expected) | SC-003/SC-004 need 100% well-formed items and two-way links. ID numbering must count hand edits and mentions across the engagement. The real client name must stay out of the conversation. | Instructions only can't guarantee the 100% targets. A `cairn` subcommand would tie the skill to the installed CLI version and fail for analysts without `cairn`. |
 | New standard fields on all 12 templates | FR-024/FR-026 require the reason to stay on the item, and FR-030 makes the convention shared across object types | Adding them to Q/H/A only would force a second data-model change when `record-change` lands |
 

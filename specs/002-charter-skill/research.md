@@ -84,8 +84,10 @@ Context or a design choice the spec leaves open. Numbering continues the style o
 ## R5. Finding the engagement
 
 - **Decision**: Walk up from the current directory to the first `engagement.md` whose front
-  matter has `type: engagement`. If none is found, try the folder three levels above the
-  script (`<root>/.claude/skills/charter/scripts/`). If that fails too, exit with code 2 and
+  matter has `type: engagement`. If none is found, try the engagement that contains the
+  script: `Path(__file__).resolve().parents[4]` (the root of
+  `<root>/.claude/skills/charter/scripts/charter.py`), but only if the path has that many
+  parents and that folder's `engagement.md` has `type: engagement`. If that fails too, exit with code 2 and
   print: "Not inside a Cairn engagement. Create one with `cairn init`, then run `charter`
   from inside it." (FR-002).
 - **Rationale**: Matches how feature 001 recognizes an engagement (`type: engagement`), and
@@ -367,10 +369,7 @@ Context or a design choice the spec leaves open. Numbering continues the style o
 
   ~~~yaml
   name: charter
-  description: >-
-    Frame or revise the engagement charter (scope, key questions, hypotheses, assumptions,
-    stakeholders, lenses) by interviewing the consultant. Use at kickoff, or when the
-    weekly steer changes questions, hypotheses or scope. Never reads client documents.
+  description: "Frame or revise the engagement charter (scope, key questions, hypotheses, assumptions, stakeholders, lenses) by interviewing the consultant. Use at kickoff, or when the weekly steer changes questions, hypotheses or scope. Never reads client documents."
   argument-hint: "[anything you already know: objectives, deadlines, hunches…]"
   allowed-tools: Read, Edit, Write, Bash(python3 *charter.py *)
   ~~~
@@ -379,7 +378,9 @@ Context or a design choice the spec leaves open. Numbering continues the style o
   `allowed-tools` pre-approves the script and file edits so the interview isn't interrupted
   by permission prompts. It doesn't restrict tools, which is why R6 does not rely on it.
 - **Rationale**: The description doubles as the README's skill line (001 `bundled_skills`),
-  so it says what the skill does in one sentence first.
+  so it says what the skill does in one sentence first. The description is one double-quoted
+  line because `cairn`'s front matter reader (`textutil.read_front_matter`) only reads flat
+  values. A folded `>-` value would show up in the engagement README as `>-`.
 
 ## R22. Framework version
 

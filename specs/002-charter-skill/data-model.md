@@ -41,7 +41,7 @@ The engagement's framing: the six files in `00-charter/`.
 
 ~~~text
 empty --first topic saved--> draft
-draft --"approve charter" and model_use != unconfirmed--> approved   (logs approve-charter)
+draft --"approve charter" and model_use != unconfirmed--> approved   (every proposed item → active first, after the consultant confirms the list; logs approve-charter)
 draft --"approve charter" and model_use == unconfirmed--> draft      (items may still go active; skill says why)
 approved --revision--> approved                                      (summary counts items proposed since approved_on)
 approved --"approve charter" again--> approved                       (approved_on/by updated; logs approve-charter)
@@ -166,8 +166,8 @@ with "this item was dropped" (edge case).
 |---|---|---|
 | On creation | unchanged | `status: proposed`, `supersedes: ["H-002"]`, `change_reason`, `change_trigger`, same `question` as old unless the consultant says otherwise |
 | On approval | `status: superseded`, `change_reason`/`change_trigger` copied from the new item | `status: active` |
-| On rejection of the new version | unchanged | `status: rejected`, with the consultant's reason |
-| Changelog | one `supersede` event, subject `H-002 → H-004`, logged at approval | — |
+| On rejection of the new version | unchanged | `status: rejected`, with `change_reason` and `change_trigger` |
+| Changelog | one `supersede` event, subject `H-002 → H-004`, logged at approval | if the new version is rejected: one `reject` event, subject `H-004` |
 
 For a new hypothesis, the question's `hypotheses` list gains the new ID at creation, so
 links agree in both directions from the start. For a new question, its `hypotheses` list

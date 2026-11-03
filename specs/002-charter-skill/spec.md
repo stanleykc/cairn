@@ -36,6 +36,8 @@
 - Q: Where are the constraints the consultant names recorded? → A: In a Constraints
   section of `scope.md`, one bullet each, tagged budget, timeline, technology, politics or
   other. Changes to it are logged as scope changes.
+- Q: Can the charter be approved while some items stay `proposed`? → A: No. Approving the
+  charter approves every remaining proposed item, after the consultant confirms the list.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -387,7 +389,10 @@ discarded one is not written.
   instruction in the session: approve (to `active`), reject (to `rejected`, with a reason)
   or approve a revision (FR-024). Items with no instruction MUST stay `proposed`.
 - **FR-035**: When the consultant approves the charter as a whole, the skill MUST record the
-  approval date and approver in `scope.md`. It MUST NOT record approval while the
+  approval date and approver in `scope.md`. Approving the charter as a whole approves every
+  item that is still `proposed`, including pending new versions (FR-024). The skill first
+  lists those items and asks the consultant to confirm. An item the consultant wants to hold
+  back must be rejected, or approval of the charter put off. It MUST NOT record approval while the
   model-use policy is `unconfirmed`. Later additions and revisions MUST NOT reset an
   approved charter to draft. The review summary MUST show how many items have been
   proposed since the last approval, and approving again MUST update the date and
