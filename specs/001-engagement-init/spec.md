@@ -8,6 +8,15 @@
 
 **Input**: User description: "Using this description to help scope the feature, I want to create a script to initialize a new engagement. The implementation in this framework should be set up to help establish projects (an engagement) for analyzing the engagement with a client. This would be similar to what is done in the 'speckit init' utility to set up a new project."
 
+## Clarifications
+
+### Session 2026-11-03
+
+- Q: Should this feature also include a first, working version of the `charter` skill? → A: No. `charter` is its own feature. This feature makes every bundled skill available, and `charter` is confirmed when it ships.
+- Q: When the consultant gives a code name, should the client's real name still be stored in the engagement record? → A: Only if the consultant gives it. When a code name is used, the real name is optional. If it's left out, it appears in no generated file. If it's given, it appears only in the engagement record.
+- Q: If the new engagement is created inside an existing git repository, what should the command do about version control? → A: It doesn't create a repository and doesn't commit. It leaves the files uncommitted, says so in the summary, and warns if that repository has a remote.
+- Q: During refresh, should a skill the consultant edited be protected the same way as an edited template? → A: Yes. Edits are detected, the consultant confirms before each one is replaced, and their version is kept as a backup.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Create a new engagement workspace (Priority: P1)
@@ -94,7 +103,8 @@ whose record shows the policy as unconfirmed.
    value is recorded in the engagement record.
 6. **Given** the client's real name must not appear in folder names on shared storage,
    **When** the consultant supplies a code name, **Then** the folder name and engagement
-   identifier use the code name only.
+   identifier use the code name only. If the consultant also supplies the real name, it
+   appears only in the engagement record. If they don't, no generated file contains it.
 
 ---
 
@@ -108,14 +118,16 @@ configuring anything by hand.
 available is a manual step, consultants will skip it or do it inconsistently, but the
 folder layout (Story 1) is still useful on its own for hand-written work.
 
-**Independent Test**: Initialize a synthetic engagement, open it with the supported AI
-assistant, and invoke `charter`; the skill is found and writes to `00-charter/`.
+**Independent Test**: Bundle a synthetic test skill with the framework, initialize a
+synthetic engagement, open it with the supported AI assistant, and invoke that skill; it is
+found without any setup. The `charter` skill itself is delivered and checked by its own
+feature.
 
 **Acceptance Scenarios**:
 
 1. **Given** a newly created engagement, **When** the consultant asks their AI assistant to
-   run `charter` from inside the engagement folder, **Then** the skill is available without
-   further setup.
+   run any skill bundled with the framework (for example `charter`, once it ships) from
+   inside the engagement folder, **Then** the skill is available without further setup.
 2. **Given** a newly created engagement, **When** the consultant inspects the engagement
    record, **Then** it shows which framework version provided the templates and skills.
 
@@ -141,8 +153,8 @@ framework-provided files changed and every content file is byte-for-byte identic
    consultant refreshes it, **Then** templates and skills are updated, the recorded framework
    version is updated, and a list of changed files is shown.
    Skills only change when the engagement is refreshed, never because the framework changed.
-2. **Given** the consultant has edited a template in their engagement, **When** they refresh,
-   **Then** that template is not replaced without the consultant's confirmation, and the
+2. **Given** the consultant has edited a template or skill in their engagement, **When** they
+   refresh, **Then** that file is not replaced without the consultant's confirmation, and the
    consultant's version is kept as a backup if they confirm.
 3. **Given** any engagement, **When** refresh runs, **Then** nothing in `10-sources/`, the
    charter, the object folders, `60-log/`, `70-views/`, `80-deliverables/` or `_inbox/` is
@@ -155,8 +167,8 @@ framework-provided files changed and every content file is byte-for-byte identic
 ### Edge Cases
 
 - Engagement or client names with spaces, capitals, accents or punctuation are turned into
-  a safe, lowercase, hyphenated folder name; the original names are kept in the engagement
-  record.
+  a safe, lowercase, hyphenated folder name; the names as typed are kept in the engagement
+  record (subject to FR-016 when a code name is used).
 - The target folder name already exists for the same client (for example, a second
   engagement): initialization refuses rather than merging, and suggests a distinct name.
 - The target is inside another engagement folder: initialization refuses, since nested
@@ -169,6 +181,9 @@ framework-provided files changed and every content file is byte-for-byte identic
   and reports which assets are missing instead of creating a partial engagement.
 - Refresh is pointed at a folder that is not a Cairn engagement (no engagement record):
   it refuses.
+- The target is inside an existing version-control repository: no new repository and no
+  commit are made, the summary says the files are uncommitted, and it warns if that
+  repository has a remote, since pushing it would send client material off the machine.
 
 ## Requirements *(mandatory)*
 
@@ -178,8 +193,8 @@ framework-provided files changed and every content file is byte-for-byte identic
 
 - **FR-001**: The framework MUST provide a single command that creates a new engagement
   folder at a location the consultant chooses, defaulting to the current working location.
-- **FR-002**: The command MUST require an engagement name and a client name (or client code
-  name), and MUST derive the folder name as `<client>-<engagement>` in lowercase hyphenated
+- **FR-002**: The command MUST require an engagement name and at least one of a client name
+  or client code name, and MUST derive the folder name as `<client>-<engagement>` in lowercase hyphenated
   form unless the consultant supplies a folder name explicitly.
 - **FR-003**: The command MUST accept all inputs as arguments for unattended use, and MUST
   prompt for any missing required input when run interactively.
@@ -222,7 +237,10 @@ framework-provided files changed and every content file is byte-for-byte identic
   `00-charter/scope.md`. When it is `unconfirmed`, the README and the summary MUST say that
   it must be set before any source is ingested.
 - **FR-016**: The command MUST support a client code name so that the real client name does
-  not appear in the folder name or engagement identifier.
+  not appear in the folder name or engagement identifier. When a code name is given, the
+  real client name MUST be optional. If it is omitted, it MUST NOT appear in any generated
+  file, folder name or version-control message. If it is given, it MUST appear only in the
+  engagement record.
 - **FR-017**: If the command fails partway, it MUST remove only what it created during that
   run, leave pre-existing content untouched, and report what failed.
 - **FR-018**: The command MUST NOT send any engagement information to any external service,
@@ -238,8 +256,10 @@ framework-provided files changed and every content file is byte-for-byte identic
 - **FR-021**: By default, the command MUST set up local version control for the engagement
   folder and record an initial snapshot of everything it created. All engagement content,
   including raw originals in `10-sources/raw/`, MUST be tracked. The consultant MUST be able
-  to opt out at initialization. If the target is already under version control, the command
-  MUST NOT set it up again.
+  to opt out at initialization. If the target is already inside an existing repository, the
+  command MUST NOT create a new one and MUST NOT commit anything. It MUST leave the created
+  files uncommitted, say so in the summary, and warn if that repository has a remote
+  configured.
 
 **Refreshing an existing engagement**
 
@@ -249,8 +269,9 @@ framework-provided files changed and every content file is byte-for-byte identic
 - **FR-023**: Refresh MUST NOT create, change or delete any file outside framework-provided
   areas. In particular, it MUST NOT touch sources, charter files, objects, logs, views,
   deliverables or the inbox.
-- **FR-024**: Refresh MUST detect templates the consultant has edited, ask for confirmation
-  before replacing each one, and keep the consultant's version as a backup when replacing.
+- **FR-024**: Refresh MUST detect framework-provided files (templates and skills) the
+  consultant has edited, ask for confirmation before replacing each one, and keep the
+  consultant's version as a backup when replacing.
 - **FR-025**: Refresh MUST refuse to run on a folder that has no engagement record, or on an
   engagement created by a newer framework version than the one running.
 
@@ -286,8 +307,9 @@ framework-provided files changed and every content file is byte-for-byte identic
   inside another engagement are refused, with no files written.
 - **SC-004**: Initializing into an existing folder, or refreshing an engagement, changes
   zero existing content files, as confirmed by comparing file contents before and after.
-- **SC-005**: In a fresh engagement, the consultant can invoke the `charter` skill on the
-  first attempt with no manual setup.
+- **SC-005**: In a fresh engagement, the consultant can invoke every skill bundled with the
+  framework on the first attempt with no manual setup. This is checked here with a
+  synthetic test skill, and again for `charter` when that feature ships.
 - **SC-006**: 100% of new engagements show a model-use policy in the engagement record, and
   every engagement where it was not stated shows `unconfirmed`.
 - **SC-007**: A team member new to Cairn can, using only the engagement README, correctly
@@ -306,8 +328,9 @@ framework-provided files changed and every content file is byte-for-byte identic
   restricted sources) belongs to `ingest`.
 - Master templates for every object type are part of the framework and are delivered as part
   of this feature where they do not yet exist.
-- Skills not yet built (Phases 2 and 3) are simply absent from new engagements; refresh
-  adds them as they become available.
+- Skills not yet built, including the Phase 1 skills such as `charter`, are simply absent
+  from new engagements; refresh adds them as they become available. This feature does not
+  deliver any skill.
 - Archiving, returning or deleting raw sources at engagement close is out of scope and will
   be handled by a later close-out feature. Because raw originals are tracked in version
   history (FR-021), that feature must also deal with removing them from history, or
