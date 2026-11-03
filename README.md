@@ -36,3 +36,48 @@ for whoever comes next.
 
 Early prototype. Phase 1 covers the core loop: charter, ingest, extract observations,
 triage, synthesize, and what-changed.
+
+## Creating an engagement
+
+Cairn ships a small command, `cairn`, that creates engagement folders and keeps their
+framework files up to date. It needs Python 3.11+ and uses only the standard library.
+
+Install it from a checkout of this repo:
+
+~~~bash
+python3 -m pip install -e .        # inside a virtual environment, or:
+uv tool install --editable .
+~~~
+
+Create an engagement **outside this repo** (the command refuses to create one inside the
+framework checkout or inside another engagement):
+
+~~~bash
+cd ~/engagements
+cairn init --engagement "Fulfillment Review" --client "Acme" --lead "Jane Analyst"
+# → ./acme-fulfillment-review/ with the canonical folders, seed files, templates,
+#   skills, and a local git repo with one commit (no remote)
+~~~
+
+Run `cairn init` with no options to be prompted for each value. Useful options:
+`--code-name` (keeps the real client name out of folder names and every file except
+`engagement.md`), `--model-use allowed|restricted|unconfirmed` (default `unconfirmed`),
+`--merge` (add only missing items to an existing folder) and `--no-git`.
+
+When the framework gains new templates or skills, update an engagement with:
+
+~~~bash
+cd ~/engagements/acme-fulfillment-review
+cairn refresh
+~~~
+
+Refresh only touches `_templates/` and the Cairn skills in `.claude/skills/`, asks before
+replacing anything you edited (and backs it up), and never touches sources, charter,
+objects, logs, views, deliverables or the inbox.
+
+The framework assets live in the package: `src/cairn/assets/seed/` (README, engagement
+record, charter and log files), `src/cairn/assets/templates/` (one template per object
+type) and `src/cairn/assets/skills/` (Cairn skills, copied into each engagement).
+
+For development: `python3 -m venv .venv && source .venv/bin/activate &&
+python3 -m pip install -e '.[dev]' && python3 -m pytest`.

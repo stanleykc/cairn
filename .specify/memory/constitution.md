@@ -1,35 +1,3 @@
-<!--
-Sync Impact Report
-==================
-Version change: (unversioned template) → 1.0.0
-Bump rationale: First ratified constitution; all placeholders replaced with project content.
-
-Principles defined (template placeholder → new title):
-  - [PRINCIPLE_1_NAME] → I. Text-First: Files, Not a Platform
-  - [PRINCIPLE_2_NAME] → II. Originals Are Immutable
-  - [PRINCIPLE_3_NAME] → III. Atomic, Cited Evidence
-  - [PRINCIPLE_4_NAME] → IV. Visible Provenance and Inference
-  - [PRINCIPLE_5_NAME] → V. Stable IDs, Link by ID
-  - (added) VI. Never Delete, Supersede
-  - (added) VII. Agents Propose, the Consultant Decides (NON-NEGOTIABLE)
-  - (added) VIII. Confidentiality and the Anonymization Boundary (NON-NEGOTIABLE)
-
-Added sections:
-  - [SECTION_2_NAME] → Skill Contract
-  - [SECTION_3_NAME] → Development Workflow and Quality Gates
-  - Governance (filled)
-
-Removed sections: none
-
-Templates (not modified by this command; they read the constitution at runtime):
-  - .specify/templates/plan-template.md: "Constitution Check" gate will evaluate against
-    Principles I–VIII and the Skill Contract — no edit required
-  - .specify/templates/spec-template.md: no edit required
-  - .specify/templates/tasks-template.md: no edit required
-
-Follow-up TODOs: none. RATIFICATION_DATE set to 2026-11-03 (first adoption).
--->
-
 # Cairn Constitution
 
 Cairn (Curated Analysis, Insight and Recommendation Network) is a text-based framework that
