@@ -123,7 +123,8 @@ def framework_files(root: Path) -> dict[str, bytes]:
     result = {f"_templates/{name}": (root / "templates" / name).read_bytes() for _, _, name in TEMPLATES}
     for skill in _skill_dirs(root):
         for path in sorted(skill.rglob("*")):
-            if path.is_file():
+            # Bytecode caches appear next to a skill's scripts once they are imported.
+            if path.is_file() and "__pycache__" not in path.relative_to(skill).parts:
                 rel = path.relative_to(skill).as_posix()
                 result[f"{SKILLS_DIR}/{skill.name}/{rel}"] = path.read_bytes()
     return result

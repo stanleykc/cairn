@@ -24,8 +24,10 @@ CONTENT_FOLDERS = (
 class Setup:
     def __init__(self, tmp_path: Path, git_env: dict):
         self.tmp = tmp_path
-        self.v1 = git_env | fixture_assets(tmp_path, "0.1.0", {"alpha": ALPHA, "gamma": GAMMA}, "v1")
-        self.v2 = git_env | fixture_assets(tmp_path, "0.2.0", {"beta": BETA}, "v2")
+        self.v1 = git_env | fixture_assets(
+            tmp_path, "0.1.0", {"alpha": ALPHA, "gamma": GAMMA}, "v1", bundled_skills=False
+        )
+        self.v2 = git_env | fixture_assets(tmp_path, "0.2.0", {"beta": BETA}, "v2", bundled_skills=False)
         finding = Path(self.v2["CAIRN_ASSETS_DIR"]) / "templates" / "finding.md"
         finding.write_text(finding.read_text() + "\n## Next steps\n")
         self.work = tmp_path / "work"

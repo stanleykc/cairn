@@ -20,6 +20,7 @@ start_date: 2026-11-03
 created: 2026-11-03
 framework_version: "0.1.0"           # updated only by `cairn refresh`
 model_use: unconfirmed               # allowed | restricted | unconfirmed
+model_use_notes: ""                  # specific restrictions, free text (0.2.0)
 ---
 ~~~
 
@@ -31,7 +32,8 @@ model_use: unconfirmed               # allowed | restricted | unconfirmed
 | `lead_consultant`, `team` | string, list | init, consultant | `charter`, `debrief` |
 | `start_date`, `created` | ISO date | init | `what-changed` |
 | `framework_version` | semver string | init, refresh | `cairn refresh` |
-| `model_use` | enum | init, consultant, `charter` | `ingest` (must refuse restricted sources; must warn when `unconfirmed`) |
+| `model_use` | enum | init, consultant, `charter` (only through `charter.py model-use`) | `ingest` (must refuse restricted sources; must warn when `unconfirmed`) |
+| `model_use_notes` | string | consultant, `charter` (only through `charter.py model-use`) | `charter`, `ingest` |
 
 ## Rules
 
@@ -46,6 +48,10 @@ model_use: unconfirmed               # allowed | restricted | unconfirmed
   - `restricted`: some or all sources must not be sent. The flag is set per source with
     `restricted: true`.
   - `unconfirmed`: not known yet. Skills MUST treat this as "ask before sending".
+- `model_use_notes` holds the specific restrictions in the consultant's words, or `""`.
+  It was added in framework 0.2.0; a missing line counts as `""`. The `charter` skill
+  never edits this file directly: it writes `model_use` and `model_use_notes` only through
+  `charter.py model-use`, which updates `00-charter/scope.md` in the same step.
 - Refresh changes only the `framework_version:` line, and only by replacing that one line.
   Consultants may edit every other field by hand.
 

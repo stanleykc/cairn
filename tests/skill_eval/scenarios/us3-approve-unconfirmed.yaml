@@ -1,0 +1,13 @@
+name: Approve all while the policy is unconfirmed (US3-4, FR-035)
+fixture: drafted
+model_use: unconfirmed
+turns:
+  - "/charter Nothing has changed. I can't confirm the model-use policy yet. Let's review: approve the whole charter, I'm the approver (Test Lead)."
+  - "Yes, confirmed: approve all of them."
+expect:
+  item_status: {Q-001: active, Q-002: active, Q-003: active, H-001: active, H-002: active, A-001: active}
+  files_match:
+    00-charter/scope.md: ["^charter_status: draft", '^approved_on: ""']
+  files_not_contain:
+    60-log/changelog.md: ["charter · approve-charter"]
+  transcript_contains: ["policy"]

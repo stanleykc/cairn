@@ -1,0 +1,26 @@
+name: First interview on a fresh engagement (US1, US2-1, US2-5; SC-003, SC-004, SC-009)
+fixture: fresh
+turns:
+  - "/charter Objectives: cut order-to-ship time by 30% in the north DCs. Final readout 2026-12-04."
+  - "The policy is restricted: no interview transcripts may be sent to external AI. And yes, the objective and the readout date are right."
+  - "In scope: the three north DCs, from order release to carrier handoff. Out of scope: inbound supplier logistics. Deliverables: a diagnostic deck due 2026-11-20 and a final report due 2026-12-04. Timeline: kickoff 2026-11-03, diagnostic readout 2026-11-20, final readout 2026-12-04. Constraints: budget, no capital spend on automation this year."
+  - "Key questions, all raised by me: (1) Why is order-to-ship slow in the north DCs? priority high. (2) Which steps drive most of the delay? priority high. (3) What operating model works without new headcount? priority medium."
+  - "Hunches: for question 1, the slotting rules are the bottleneck; it's confirmed if pick travel is over 40% of cycle time and rejected if it's under 20%. Second hunch: weekend staffing rotas cause the Monday backlogs."
+  - "Yes, add a question for the weekend hunch and link it there: confirmed if the Monday backlog is twice the weekday average, rejected if it's about the same. No assumptions for now."
+  - "Stakeholders: Pat Sponsor, VP Operations, wants faster shipping before peak. Sam Planner, north DC operations lead, thinks carriers are the problem. Lenses: your starting set is fine. Criteria: time to value. That's everything: skip suggestions and the review, and show me the end summary."
+expect:
+  first_reply_contains: ["model"]
+  transcript_count:
+    "(don't|do not|please don.t) paste": [1, 1]
+  item_status: {Q-001: proposed, Q-002: proposed, Q-003: proposed, Q-004: proposed, H-001: proposed, H-002: proposed}
+  absent_items: [A-001]
+  files_contain:
+    engagement.md: ["model_use: restricted", "transcripts"]
+    00-charter/scope.md: ["Restrictions:", "2026-12-04", "**Budget**"]
+    00-charter/stakeholders.md: ["Pat Sponsor", "not yet interviewed"]
+    00-charter/lenses.md: ["**Cost**", "**Risk**"]
+  files_match:
+    00-charter/hypotheses.md: ['^question: "Q-001"', '^confirm_if: "\S', '^reject_if: "\S']
+  charter_count:
+    "^origin: consultant-note": [6, 6]
+  transcript_contains: ["Not covered"]

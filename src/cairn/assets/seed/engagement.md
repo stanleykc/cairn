@@ -10,6 +10,7 @@ start_date: ${start_date}
 created: ${created}
 framework_version: ${framework_version_q}  # updated only by cairn refresh
 model_use: ${model_use}  # allowed | restricted | unconfirmed
+model_use_notes: ""  # specific restrictions, free text
 ---
 
 # Engagement record
@@ -33,6 +34,8 @@ read it; edit the values above by hand when they change.
 - `model_use`: what the client agreement allows to be sent to external AI services:
   `allowed`, `restricted` (some sources must not be sent; mark them `restricted: true`) or
   `unconfirmed` (not known yet: ask before sending anything).
+- `model_use_notes`: what may or may not be sent, in the consultant's words. `""` when
+  none is recorded.
 
 **Confirm `model_use` before any source is ingested.** The copy in `00-charter/scope.md` is
 for reading; this file is the authoritative copy.

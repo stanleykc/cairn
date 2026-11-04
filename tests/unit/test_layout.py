@@ -152,3 +152,16 @@ def test_template_asset(type_, prefix, name):
 def test_seed_assets_have_no_real_ids():
     for path in (PACKAGE_ASSETS / "seed").rglob("*.md"):
         assert not REAL_ID.search(path.read_text()), path
+
+
+def test_framework_files_skip_bytecode_caches(tmp_path):
+    skill = tmp_path / "skills" / "demo"
+    (skill / "scripts" / "__pycache__").mkdir(parents=True)
+    (skill / "SKILL.md").write_text("---\nname: demo\n---\n")
+    (skill / "scripts" / "run.py").write_text("print(1)\n")
+    (skill / "scripts" / "__pycache__" / "run.cpython-39.pyc").write_bytes(b"\0")
+    for _, _, name in layout.TEMPLATES:
+        (tmp_path / "templates").mkdir(exist_ok=True)
+        (tmp_path / "templates" / name).write_text("x")
+    skill_files = [rel for rel in layout.framework_files(tmp_path) if rel.startswith(".claude/")]
+    assert skill_files == [".claude/skills/demo/SKILL.md", ".claude/skills/demo/scripts/run.py"]

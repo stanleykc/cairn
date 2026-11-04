@@ -15,10 +15,14 @@ contradicts: []           # IDs
 derived_from: []          # IDs
 supersedes: []            # IDs
 clarifies: []             # IDs
+change_reason: ""         # one line: reason for the latest supersede or reject
+change_trigger: ""        # new-evidence | client-feedback | rethinking
 created: "YYYY-MM-DD"
 question: ""              # Q-ID
+confirm_if: ""            # evidence that would confirm it
+reject_if: ""             # evidence that would reject it
 supported_by: []          # O/F-IDs
 contradicted_by: []       # O/F-IDs
 ```
 
-The working hypothesis in one sentence, and what evidence would confirm or reject it.
+The working hypothesis in one sentence.

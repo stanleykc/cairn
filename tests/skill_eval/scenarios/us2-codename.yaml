@@ -1,0 +1,12 @@
+name: Code name in use (FR-037)
+fixture: codename
+turns:
+  - "/charter Add a question, raised by me, priority medium: is the discount policy consistent across regions? Then stop and show me the end summary."
+expect:
+  item_status: {Q-002: proposed}
+  files_not_contain:
+    00-charter/questions.md: ["globex"]
+    00-charter/hypotheses.md: ["globex"]
+    00-charter/scope.md: ["globex"]
+    60-log/changelog.md: ["globex"]
+  transcript_not_contains: ["globex"]
