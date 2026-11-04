@@ -31,6 +31,8 @@ write. Supporting changes:
 - the changelog seed rewritten to a shared change convention, which `record-change` will
   reuse (FR-030);
 - a framework version bump to 0.2.0.
+- `.claude/settings.json` in each engagement, generated from the bundled skills'
+  `Bash(...)` rules, so the helper runs without prompts on every turn (research R21).
 
 ## Technical Context
 

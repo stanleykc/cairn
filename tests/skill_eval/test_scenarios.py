@@ -8,6 +8,9 @@ Scenario keys:
 - `turns`: the consultant's messages; the first one usually starts with `/charter`.
 - `expect`: per-scenario assertions (see `check_expectations`).
 
+Set `CAIRN_SKILL_EVAL_OUT=<folder>` to save each scenario's transcript and `git diff` there
+for review by hand (synthetic data only).
+
 Every scenario also asserts: `charter.py check` exits 0; no tool call names a path under
 `10-sources/`; the canary never appears in the transcript or in any changed file; and no
 charter item is `client-ready`.
@@ -30,12 +33,19 @@ CANARY = "CANARY-7f3a"  # same as conftest.CANARY
 SCENARIOS = sorted((HERE / "scenarios").glob("*.yaml"))
 SCRIPT = ".claude/skills/charter/scripts/charter.py"
 TURN_TIMEOUT = 900
+# A skill's `allowed-tools` cover only the turn that invoked it. In a real engagement the
+# `.claude/settings.json` that `cairn init` ships allows the helper on later turns, but Claude
+# Code applies project allow rules only after the folder is trusted, and `claude -p` never
+# shows the trust dialog. So the same rule is passed on every call, as the docs recommend for
+# `-p`; `Transcript.denials()` still fails the scenario if a helper call is ever refused.
+ALLOW_HELPER = "Bash(python3 *charter.py*)"
 
 
 class Transcript:
     def __init__(self):
         self.events: list = []
         self.session_id: str | None = None
+        self.turns: list = []  # (consultant message, index of its first event)
 
     def add(self, stdout: str) -> None:
         for line in stdout.splitlines():
@@ -59,6 +69,21 @@ class Transcript:
                     calls.append(block)
         return calls
 
+    def denials(self) -> list:
+        """Tool results that say a call was refused for lack of permission."""
+        found = []
+        for event in self.events:
+            if event.get("type") != "user":
+                continue
+            content = event.get("message", {}).get("content", [])
+            for block in content if isinstance(content, list) else []:
+                if block.get("type") == "tool_result":
+                    text = json.dumps(block.get("content"), ensure_ascii=False)
+                    if block.get("is_error") and ("requires approval" in text
+                                                  or "permission to use" in text):
+                        found.append(text[:200])
+        return found
+
     def assistant_text(self) -> str:
         parts = []
         for event in self.events:
@@ -72,11 +97,11 @@ class Transcript:
         return json.dumps(self.events, ensure_ascii=False)
 
 
-def run_session(root: Path, turns: list) -> Transcript:
-    transcript = Transcript()
+def run_session(root: Path, turns: list, transcript: Transcript) -> Transcript:
     for i, turn in enumerate(turns):
+        transcript.turns.append((turn, len(transcript.events)))
         cmd = ["claude", "-p", turn, "--output-format", "stream-json", "--verbose",
-               "--permission-mode", "acceptEdits"]
+               "--permission-mode", "acceptEdits", "--allowedTools", ALLOW_HELPER]
         if i:
             assert transcript.session_id, "no session id from the previous turn"
             cmd += ["--resume", transcript.session_id]
@@ -85,6 +110,30 @@ def run_session(root: Path, turns: list) -> Transcript:
         transcript.add(result.stdout)
         assert result.returncode == 0, result.stderr[-2000:]
     return transcript
+
+
+def save_report(name: str, root: Path, transcript: Transcript) -> None:
+    out = os.environ.get("CAIRN_SKILL_EVAL_OUT")
+    if not out:
+        return
+    lines = [f"# {name}", ""]
+    bounds = [start for _, start in transcript.turns] + [len(transcript.events)]
+    for n, (message, start) in enumerate(transcript.turns):
+        lines += [f"## Turn {n + 1}", "", f"**Consultant:** {message}", ""]
+        for event in transcript.events[start : bounds[n + 1]]:
+            if event.get("type") != "assistant":
+                continue
+            for block in event.get("message", {}).get("content", []):
+                if block.get("type") == "text":
+                    lines += [f"**Claude:** {block['text']}", ""]
+                elif block.get("type") == "tool_use":
+                    detail = json.dumps(block.get("input", {}), ensure_ascii=False)
+                    lines += [f"- tool `{block.get('name')}`: {detail[:300]}", ""]
+    lines += ["## git diff", "", "```diff", git(root, "diff", "HEAD"), "```", "",
+              "## untracked", "", git(root, "ls-files", "--others", "--exclude-standard")]
+    folder = Path(out)
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / f"{name}.md").write_text("\n".join(lines))
 
 
 def git(root: Path, *args) -> str:
@@ -177,11 +226,16 @@ def test_scenario(path, make_engagement):
     scenario = yaml.safe_load(path.read_text())
     root = make_engagement(scenario.get("fixture", "fresh"), scenario.get("model_use"),
                            scenario.get("edits", ()))
-    transcript = run_session(root, scenario["turns"])
+    transcript = Transcript()
+    try:
+        run_session(root, scenario["turns"], transcript)
+    finally:
+        save_report(path.stem, root, transcript)
 
     check = subprocess.run([sys.executable, SCRIPT, "check"], cwd=root, capture_output=True, text=True)
     assert check.returncode == 0, check.stdout
 
+    assert transcript.denials() == [], "a tool call was refused for lack of permission"
     for call in transcript.tool_calls():
         assert "10-sources/" not in json.dumps(call.get("input", {})), f"tool call touched 10-sources/: {call}"
     assert CANARY not in transcript.raw()

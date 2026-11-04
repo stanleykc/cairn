@@ -162,7 +162,8 @@ _inbox/  _templates/  00-charter/  10-sources/  10-sources/raw/  10-sources/extr
 ~~~
 
 **Protected areas** (refresh never touches them, FR-023): everything except `_templates/`,
-the `.claude/skills/<name>/` folders listed in the manifest, `.cairn/`, and the
+the `.claude/skills/<name>/` folders listed in the manifest, `.claude/settings.json`
+(0.2.0), `.cairn/`, and the
 `framework_version:` line of `engagement.md`.
 
 ## 6. Framework manifest (`.cairn/manifest.json`)

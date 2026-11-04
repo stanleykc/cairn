@@ -69,6 +69,8 @@ run `/charter`: it interviews you to frame the scope, key questions, hypotheses,
 assumptions, stakeholders and lenses, settles the model-use policy, and records later
 revisions. It never reads client documents. Its helper script needs `python3` 3.9 or
 later (the macOS system Python works); the `cairn` command itself still needs 3.11+.
+Accept Claude Code's trust prompt the first time you open the engagement: the engagement's
+`.claude/settings.json` then lets the skill's helper run without asking each time.
 
 When the framework gains new templates or skills, update an engagement with:
 

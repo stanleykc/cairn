@@ -56,7 +56,7 @@ def test_skill_front_matter():
     assert meta["name"] == "charter"
     assert meta["description"] == DESCRIPTION
     assert meta["argument-hint"]
-    assert meta["allowed-tools"] == "Read, Edit, Write, Bash(python3 *charter.py *)"
+    assert meta["allowed-tools"] == "Read, Edit, Write, Bash(python3 *charter.py*)"
     assert layout.bundled_skills(PACKAGE_ASSETS) == [("charter", DESCRIPTION)]
 
 
@@ -141,3 +141,29 @@ def test_never_rules_match_contract():
     skill = _never_rules((SKILL_DIR / "SKILL.md").read_text())
     assert len(contract) == 9
     assert skill == contract
+
+
+SETTINGS = {"permissions": {"allow": ["Bash(python3 *charter.py*)"]}}
+
+
+def test_init_ships_settings(tmp_path, git_env):
+    eng = init(tmp_path, git_env)
+    settings = eng / ".claude" / "settings.json"
+    assert json.loads(settings.read_text()) == SETTINGS
+    manifest = json.loads((eng / ".cairn" / "manifest.json").read_text())
+    assert ".claude/settings.json" in manifest["files"]
+
+
+def test_refresh_adds_settings_and_keeps_edits(tmp_path, git_env):
+    old = fixture_assets(tmp_path, "0.1.0", name="v1", bundled_skills=False)
+    eng = init(tmp_path, git_env, old)
+    assert run_cairn("refresh", cwd=eng, env=git_env).returncode == 0
+    settings = eng / ".claude" / "settings.json"
+    assert json.loads(settings.read_text()) == SETTINGS
+    mine = {"permissions": {"allow": ["Bash(python3 *charter.py*)", "Bash(git status)"]}}
+    settings.write_text(json.dumps(mine))
+    newer = fixture_assets(tmp_path, "0.3.0", name="v3")
+    result = run_cairn("refresh", cwd=eng, env=git_env | newer)
+    assert result.returncode == 0, result.stderr
+    assert json.loads(settings.read_text()) == mine
+    assert ".claude/settings.json" in result.stdout.split("kept (edited, not replaced):")[1]

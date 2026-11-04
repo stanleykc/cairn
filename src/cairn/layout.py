@@ -73,6 +73,8 @@ TEMPLATES = (
 
 MANIFEST_PATH = ".cairn/manifest.json"
 SKILLS_DIR = ".claude/skills"
+SETTINGS_PATH = ".claude/settings.json"
+_BASH_RULE = re.compile(r"Bash\([^)]*\)")
 
 REAL_ID = re.compile(r"\b[SOQHARFIPXDL]-\d{3}\b")
 # Files holding names the consultant typed, so an ID-like name is not an object (FR-007).
@@ -118,6 +120,26 @@ def missing_assets(root: Path) -> list[str]:
     return missing
 
 
+def skill_permissions(root: Path) -> list[str]:
+    """The `Bash(...)` rules from the bundled skills' `allowed-tools`, in skill order.
+
+    A skill's `allowed-tools` only cover the turn that invoked it, so these rules go into
+    the engagement's `.claude/settings.json` to keep a skill's helper from prompting on
+    later turns (002 research R21). File tools are deliberately not allowed project-wide.
+    """
+    rules: list[str] = []
+    for skill in _skill_dirs(root):
+        meta = read_front_matter((skill / "SKILL.md").read_text(encoding="utf-8"))
+        for rule in _BASH_RULE.findall(meta.get("allowed-tools", "")):
+            if rule not in rules:
+                rules.append(rule)
+    return rules
+
+
+def settings_bytes(rules: list[str]) -> bytes:
+    return (json.dumps({"permissions": {"allow": rules}}, indent=2) + "\n").encode("utf-8")
+
+
 def framework_files(root: Path) -> dict[str, bytes]:
     """Every framework-provided file, keyed by its path in the engagement (R10)."""
     result = {f"_templates/{name}": (root / "templates" / name).read_bytes() for _, _, name in TEMPLATES}
@@ -127,6 +149,9 @@ def framework_files(root: Path) -> dict[str, bytes]:
             if path.is_file() and "__pycache__" not in path.relative_to(skill).parts:
                 rel = path.relative_to(skill).as_posix()
                 result[f"{SKILLS_DIR}/{skill.name}/{rel}"] = path.read_bytes()
+    rules = skill_permissions(root)
+    if rules:
+        result[SETTINGS_PATH] = settings_bytes(rules)
     return result
 
 

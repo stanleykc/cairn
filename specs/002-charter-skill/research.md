@@ -371,12 +371,28 @@ Context or a design choice the spec leaves open. Numbering continues the style o
   name: charter
   description: "Frame or revise the engagement charter (scope, key questions, hypotheses, assumptions, stakeholders, lenses) by interviewing the consultant. Use at kickoff, or when the weekly steer changes questions, hypotheses or scope. Never reads client documents."
   argument-hint: "[anything you already know: objectives, deadlines, hunches…]"
-  allowed-tools: Read, Edit, Write, Bash(python3 *charter.py *)
+  allowed-tools: Read, Edit, Write, Bash(python3 *charter.py*)
   ~~~
 
   Model invocation stays enabled, so "let's set up the charter" triggers the skill.
   `allowed-tools` pre-approves the script and file edits so the interview isn't interrupted
   by permission prompts. It doesn't restrict tools, which is why R6 does not rely on it.
+  The pattern ends in `charter.py*`, not `charter.py *`: the assistant often quotes the
+  script path (`python3 "/…/charter.py" status`), and the closing quote then sits between
+  `charter.py` and the space, so the stricter pattern never matched and every helper call
+  needed approval (found in the T063 live evaluation).
+
+  A skill's `allowed-tools` also cover only the turn that invoked the skill, so later turns
+  of the same session would prompt for the helper again. `cairn init` and `cairn refresh`
+  therefore write `.claude/settings.json` into the engagement, allowing the `Bash(...)`
+  rules from the bundled skills' `allowed-tools` (generated, so each rule is defined once,
+  in the skill). It is a framework file: refresh updates it, and keeps a hand-edited copy
+  unless the consultant confirms the replacement. File tools (`Edit`, `Write`) are not
+  allowed project-wide: that would let the assistant change any file without a prompt,
+  including originals in `10-sources/raw/`. Claude Code applies project allow rules only
+  once the folder is trusted (the consultant accepts the trust dialog the first time they
+  open the engagement), so `claude -p` runs in an untrusted folder, such as the skill
+  evaluation's temporary engagements, still pass the rule with `--allowedTools`.
 - **Rationale**: The description doubles as the README's skill line (001 `bundled_skills`),
   so it says what the skill does in one sentence first. The description is one double-quoted
   line because `cairn`'s front matter reader (`textutil.read_front_matter`) only reads flat

@@ -2,7 +2,7 @@
 name: charter
 description: "Frame or revise the engagement charter (scope, key questions, hypotheses, assumptions, stakeholders, lenses) by interviewing the consultant. Use at kickoff, or when the weekly steer changes questions, hypotheses or scope. Never reads client documents."
 argument-hint: "[anything you already know: objectives, deadlines, hunches…]"
-allowed-tools: Read, Edit, Write, Bash(python3 *charter.py *)
+allowed-tools: Read, Edit, Write, Bash(python3 *charter.py*)
 ---
 
 # Charter
@@ -41,7 +41,11 @@ skill loads):
 python3 <this skill's base directory>/scripts/charter.py status
 ```
 
-Quote the path if it contains spaces. Commands:
+Run each helper command on its own: don't chain other commands after it (`; echo …`,
+`| …`), so it runs without a permission prompt. Quote the path only if it contains spaces.
+If a helper command is blocked or fails, don't write any Q, H or A entry (you can't get an ID
+or check the result): tell the consultant, and ask them to allow the command.
+Commands:
 
 | Command | What it gives you |
 |---|---|

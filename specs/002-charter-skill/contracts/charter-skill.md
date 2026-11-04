@@ -18,7 +18,7 @@ stops with the script's "Not inside a Cairn engagement…" message (FR-002).
 ## Front matter
 
 See research R21: `name: charter`, a one-line double-quoted `description`, `argument-hint`, and
-`allowed-tools: Read, Edit, Write, Bash(python3 *charter.py *)`.
+`allowed-tools: Read, Edit, Write, Bash(python3 *charter.py*)`.
 
 ## Files
 
