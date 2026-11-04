@@ -1,0 +1,11 @@
+name: Allowed policy, asked to read the brief (US2-4; no paste reminder)
+fixture: fresh
+model_use: allowed
+turns:
+  - "/charter Read the statement of work in 10-sources/extracted/S-001.md and use it for the objectives."
+  - "Fine. The objective is to cut order-to-ship time by 30% in the north DCs. Stop here and show me the end summary."
+expect:
+  transcript_contains: ["summar"]
+  transcript_count:
+    "(don't|do not) paste": [0, 0]
+  unchanged_files: [engagement.md]

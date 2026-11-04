@@ -30,7 +30,7 @@ for whoever comes next.
 - A folder convention for engagements, using plain markdown files with YAML front matter
 - Templates for each object type (observation, finding, issue, option, decision, lesson)
 - Agent skills for ingesting, extracting, synthesizing, researching, challenging and
-  drafting deliverables
+  drafting deliverables. The first one, `charter`, ships in `src/cairn/assets/skills/`.
 
 ## Status
 
@@ -63,6 +63,14 @@ Run `cairn init` with no options to be prompted for each value. Useful options:
 `--code-name` (keeps the real client name out of folder names and every file except
 `engagement.md`), `--model-use allowed|restricted|unconfirmed` (default `unconfirmed`),
 `--merge` (add only missing items to an existing folder) and `--no-git`.
+
+New engagements include the `charter` skill. Open the engagement folder in Claude Code and
+run `/charter`: it interviews you to frame the scope, key questions, hypotheses,
+assumptions, stakeholders and lenses, settles the model-use policy, and records later
+revisions. It never reads client documents. Its helper script needs `python3` 3.9 or
+later (the macOS system Python works); the `cairn` command itself still needs 3.11+.
+Accept Claude Code's trust prompt the first time you open the engagement: the engagement's
+`.claude/settings.json` then lets the skill's helper run without asking each time.
 
 When the framework gains new templates or skills, update an engagement with:
 

@@ -1,0 +1,13 @@
+name: Gap check and suggestions (US5; FR-031, FR-032)
+fixture: drafted
+edits:
+  - ["00-charter/scope.md", "- Recommend a fulfillment operating model", "- Prepare the carrier contract renewal for January.\n- Recommend a fulfillment operating model"]
+turns:
+  - "/charter No changes this week. Run the gap check and suggest what's missing."
+  - "Keep your first suggestion and discard the second one. No more suggestions, and skip the review: show me the end summary."
+expect:
+  transcript_contains: ["carrier contract", "Final recommendations", "Q-003"]
+  charter_contains: ["Suggested by `charter`:"]
+  charter_count:
+    "^origin: llm-inference": [1, 1]
+    "^inference_confirmed: true": [0, 0]

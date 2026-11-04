@@ -1,0 +1,8 @@
+name: Revision requested without a reason (FR-023)
+fixture: approved
+turns:
+  - "/charter Revise H-001 so it says the slotting rules in the north DCs only are the bottleneck."
+expect:
+  transcript_contains: ["reason"]
+  absent_items: [H-004]
+  unchanged_files: [00-charter/hypotheses.md, 00-charter/questions.md, 60-log/changelog.md]

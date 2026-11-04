@@ -4,11 +4,24 @@ type: changelog
 
 # Changelog
 
-A dated record of every supersede, clarify and correct event. Nothing is deleted; a changed
-idea is recorded here instead.
+A dated record of every change to the engagement's ideas: supersede, correct, clarify,
+reject, relink and scope change, plus model-use and charter approval. Nothing is deleted; a
+changed idea is recorded here instead. The full convention is in
+`.claude/skills/charter/reference/change-convention.md`.
 
 Add one line per event, newest last:
 
-`YYYY-MM-DD · <object ID> · <supersede | clarify | correct> · <reason> · <trigger: new evidence | client feedback | rethinking>`
+`YYYY-MM-DD · <subject> · <event> · <reason> · <trigger>`
+
+- subject: an ID (`A-###`), a new version (`<old ID> → <new ID>`), a moved link
+  (`<H-ID>: <old Q-ID> → <new Q-ID>`), a scope section (`scope/Timeline`), `charter` or
+  `model-use`
+- event: `supersede · correct · clarify · reject · relink · scope-change · model-use · approve-charter`
+- trigger: `new evidence · client feedback · rethinking · -` (`-` only for `model-use` and
+  `approve-charter`)
+
+Previous text, or what moved or was wrong, goes underneath in lines starting with `> `.
+It is required for `clarify`, `scope-change` and `correct`. A literal ` · ` inside the
+reason is written as ` - `. The first event replaces the line below.
 
 No changes yet.

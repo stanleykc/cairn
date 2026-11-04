@@ -71,15 +71,23 @@ def tree_hash(path: Path, exclude=()) -> dict[str, str]:
     return result
 
 
-def fixture_assets(tmp_path: Path, version="0.1.0", skills=None, name="assets") -> dict[str, str]:
+def fixture_assets(
+    tmp_path: Path, version="0.1.0", skills=None, name="assets", bundled_skills=True
+) -> dict[str, str]:
     """Copy the package assets to `tmp_path/name`, add `skills`, and return env additions.
 
     `skills` maps a skill name to its SKILL.md text, or to a dict of relative path → text.
+    With `bundled_skills=False`, the package's own skills (such as `charter`) are removed
+    first, so the copy holds exactly the skills given in `skills`.
     """
     root = tmp_path / name
     if root.exists():
         shutil.rmtree(root)
     shutil.copytree(PACKAGE_ASSETS, root)
+    if not bundled_skills:
+        for folder in (root / "skills").iterdir():
+            if folder.is_dir():
+                shutil.rmtree(folder)
     for skill, content in (skills or {}).items():
         entries = content if isinstance(content, dict) else {"SKILL.md": content}
         for rel, text in entries.items():

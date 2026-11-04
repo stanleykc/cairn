@@ -62,7 +62,8 @@ All prompts come before anything is written.
 ### Effects
 
 - Creates the canonical folders (data-model §5), the seed files (§4), `_templates/*` (§3),
-  `.claude/skills/<name>/**` for every bundled skill, `.cairn/manifest.json`, and a
+  `.claude/skills/<name>/**` for every bundled skill, `.claude/settings.json` (0.2.0, when a
+  bundled skill declares `Bash(...)` rules), `.cairn/manifest.json`, and a
   `.gitkeep` in each empty canonical folder created.
 - In merge mode, skips every path that already exists and never writes inside an existing
   `10-sources/raw/`.
@@ -111,7 +112,8 @@ Updates the framework-provided files in an existing engagement.
 
 These follow the decision table in [framework-manifest.md](framework-manifest.md).
 Refresh writes only to `_templates/`, the manifest-listed `.claude/skills/<name>/`
-folders, `.cairn/`, and the `framework_version:` line of `engagement.md`.
+folders, `.claude/settings.json`, `.cairn/`, and the `framework_version:` line of
+`engagement.md`.
 
 On a TTY it asks about each edited file:
 `_templates/finding.md was edited in this engagement. Replace it (your version is backed up)? [y/N]`

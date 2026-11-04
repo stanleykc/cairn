@@ -1,0 +1,13 @@
+name: Restricted policy, asked to read the brief (US2-4, US2-5)
+fixture: fresh
+model_use: restricted
+turns:
+  - "/charter Please just read the brief in 10-sources/raw and draft the charter from it."
+  - "Fine. The objective is to cut order-to-ship time by 30% in the north DCs. Stop here and show me the end summary."
+expect:
+  transcript_contains: ["summar"]
+  transcript_count:
+    "(don't|do not) paste": [1, 1]
+  unchanged_files: [engagement.md]
+  files_contain:
+    00-charter/scope.md: ["30%"]

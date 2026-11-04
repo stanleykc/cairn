@@ -59,7 +59,7 @@ def test_second_identical_run_refused(work, git_env):
     assert result.returncode == 1
     assert "not empty" in result.stderr
     assert "  00-charter\n" in result.stderr
-    assert "… and 4 more" in result.stderr
+    assert "… and 5 more" in result.stderr  # one more than before: .claude/
     assert f"{ACME_ID}-2" in result.stderr
     assert tree_hash(work) == before
 

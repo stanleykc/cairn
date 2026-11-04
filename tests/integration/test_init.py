@@ -39,7 +39,7 @@ def test_seed_files(acme):
         assert (acme / rel).is_file(), rel
     for md in acme.rglob("*.md"):
         rel = md.relative_to(acme).as_posix()
-        if rel == "README.md" or rel.startswith("_templates/"):
+        if rel == "README.md" or rel.startswith(("_templates/", ".claude/")):
             continue
         assert isinstance(front_matter(md), dict), rel
     holds = {
@@ -75,8 +75,9 @@ def test_engagement_record(acme):
         "team": [],
         "start_date": date.today(),
         "created": date.today(),
-        "framework_version": "0.1.0",
+        "framework_version": "0.2.0",
         "model_use": "unconfirmed",
+        "model_use_notes": "",
     }
 
 
@@ -99,15 +100,17 @@ def test_bad_start_date(tmp_path, git_env):
 
 def test_no_numbered_objects(acme):
     for md in acme.rglob("*.md"):
+        if md.relative_to(acme).parts[0] == ".claude":
+            continue  # skill instructions use example IDs; they are not objects
         assert not REAL_ID.search(md.read_text()), md
 
 
 def test_manifest(acme):
     manifest = json.loads((acme / ".cairn" / "manifest.json").read_text())
     assert manifest["schema"] == 1
-    assert manifest["framework_version"] == "0.1.0"
+    assert manifest["framework_version"] == "0.2.0"
     expected = {f"_templates/{name}" for _, _, name in layout.TEMPLATES}
-    assert set(manifest["files"]) == expected
+    assert {f for f in manifest["files"] if not f.startswith(".claude/")} == expected
     for rel, digest in manifest["files"].items():
         assert digest == sha256_bytes((acme / rel).read_bytes())
 
@@ -142,7 +145,7 @@ def test_summary(tmp_path, git_env):
     result = run_cairn(*INIT_ACME, "--no-git", cwd=tmp_path, env=git_env)
     out = result.stdout
     assert f"Created engagement {ACME_ID} at {tmp_path.resolve() / ACME_ID}" in out
-    assert "framework 0.1.0 · 16 folders · 12 seed files · 12 templates · 0 skills" in out
+    assert "framework 0.2.0 · 16 folders · 12 seed files · 12 templates · 1 skills" in out
     assert "Model-use policy is UNCONFIRMED" in out
     assert "1. Confirm the client's model-use policy" in out
     assert "2. Run the `charter` skill" in out
@@ -227,11 +230,17 @@ def test_skills_copied(tmp_path, git_env):
     readme = (eng / "README.md").read_text()
     assert "Skills installed when this engagement was created:" in readme
     assert "- `demo-skill` — Synthetic test skill" in readme
+    assert "- `charter` — " in readme
     assert "The current set is in `.claude/skills/`." in readme
-    assert "· 1 skills" in result.stdout
+    assert "· 2 skills" in result.stdout
 
 
-def test_no_skills_bundled(acme):
+def test_no_skills_bundled(tmp_path, git_env):
+    env = git_env | fixture_assets(tmp_path, bundled_skills=False)
+    work = tmp_path / "work"
+    work.mkdir()
+    assert run_cairn(*INIT_ACME, "--no-git", cwd=work, env=env).returncode == 0
+    acme = work / ACME_ID
     assert not (acme / ".claude").exists()
     readme = (acme / "README.md").read_text()
     assert "None installed yet." in readme

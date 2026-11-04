@@ -1,0 +1,17 @@
+name: Weekly revision of an approved charter (US4; SC-006; quickstart §5)
+fixture: approved
+turns:
+  - "/charter Weekly steer update. First, add a question raised by Pat Sponsor, priority medium: do carrier contracts limit pickup windows?"
+  - "Next, revise H-002: narrow it to 'Waiting for weekday carrier pickup is the largest single source of delay'. Reason: the week 44 data shows weekend pickups are fine. Trigger: new evidence. I approve the new version."
+  - "Reject A-001: the client expects 25% more volume from a new channel. Trigger: client feedback."
+  - "Last, move the final readout from 2026-12-04 to 2026-12-11: the sponsor moved it, so client feedback. Then show me the end summary; skip suggestions and the review."
+expect:
+  item_status: {Q-005: proposed, H-004: active, H-002: superseded, A-001: rejected, Q-001: active, H-003: active}
+  item_fields:
+    H-004: {supersedes: ["H-002"]}
+  entry_text_unchanged: [H-002, A-001, Q-001, Q-002, H-001, H-003]
+  files_contain:
+    00-charter/scope.md: ["2026-12-11"]
+    60-log/changelog.md: ["· H-002 → H-004 · supersede · ", "new evidence", "· A-001 · reject · ", "client feedback", "· scope/Timeline · scope-change · ", "> - 2026-12-04"]
+  unchanged_files: [00-charter/stakeholders.md, 00-charter/lenses.md, engagement.md]
+  transcript_contains: ["O-014", "F-003"]

@@ -44,6 +44,7 @@ Summary:
 | `created` | date | yes | today | fixed |
 | `framework_version` | semver string | yes | running `cairn.__version__` | fixed. Refresh updates it. |
 | `model_use` | `allowed` \| `restricted` \| `unconfirmed` | yes | `unconfirmed` | `--model-use` or prompt |
+| `model_use_notes` | string: specific restrictions, in the consultant's words | no | `""` | consultant, or the `charter` skill (added in framework 0.2.0) |
 
 **Validation**: `model_use` must be one of the three values (FR-015). `start_date` must be
 an ISO date. At least one of `client` and `client_code_name` is non-empty. When
@@ -81,6 +82,8 @@ from `src/cairn/assets/templates/`.
 | `derived_from` | list of IDs | `[]` |
 | `supersedes` | list of IDs | `[]` |
 | `clarifies` | list of IDs | `[]` |
+| `change_reason` | one line: the reason for the latest supersede or reject (added in 0.2.0; treated as `""` when missing) | `""` |
+| `change_trigger` | `new-evidence` \| `client-feedback` \| `rethinking` (added in 0.2.0; treated as `""` when missing) | `""` |
 | `created` | `YYYY-MM-DD` | `"YYYY-MM-DD"` placeholder |
 
 Allowed values are written as YAML comments next to each field, so someone editing a file
@@ -93,7 +96,7 @@ by hand can see them without other documentation.
 | source | `S` | file | `10-sources/extracted/` | `source_type` (pdf/deck/spreadsheet/image/transcript/web/other), `raw_file` (name in `raw/`), `provided_by`, `source_date`, `extraction_method` (text/ocr/vision-description/mixed), `derived` (bool), `restricted` (bool), `uncertain_passages` (list of locators) |
 | observation | `O` | file | `_inbox/` → `30-observations/` | `source` (S-ID), `locator`, `questions` (Q-IDs), `derived` (bool) |
 | question | `Q` | entry | `00-charter/questions.md` | `priority` (high/medium/low), `raised_by`, `hypotheses` (H-IDs) |
-| hypothesis | `H` | entry | `00-charter/hypotheses.md` | `question` (Q-ID), `supported_by`, `contradicted_by` (O/F-IDs) |
+| hypothesis | `H` | entry | `00-charter/hypotheses.md` | `question` (Q-ID), `confirm_if`, `reject_if` (evidence that would confirm or reject it; added in 0.2.0), `supported_by`, `contradicted_by` (O/F-IDs) |
 | assumption | `A` | entry | `00-charter/assumptions.md` | `basis`, `questions` (Q-IDs) |
 | research | `R` | file | `20-research/` | `question` (Q- or H-ID), `research_type` (external/prior-art), `citations` (list of URL or reference + locator) |
 | finding | `F` | file | `_inbox/` → `40-synthesis/findings/` | `so_what` (one sentence), `supported_by`, `contradicted_by` (O-IDs), `questions` |
@@ -135,8 +138,8 @@ guidance and front matter, and no objects (FR-005).
 | Path | Front matter | Body |
 |---|---|---|
 | `README.md` | none | Engagement name, layout table, status and provenance rules, ID prefixes (examples written as `O-###`, never a real number), the daily triage habit, skills available **as of creation** (generated from the copied skills, or "none installed yet"), followed by a note that `.claude/skills/` holds the current set and that `cairn refresh` may add skills not listed here, and a **model-use warning block** when `model_use: unconfirmed` (FR-011, FR-015) |
-| `engagement.md` | engagement record (§2) | One line explaining each field |
-| `00-charter/scope.md` | `type: charter-scope`, `model_use` | Objectives, Boundaries, Deliverables, Timeline, **Model use** (shows the policy and says `engagement.md` is authoritative) |
+| `engagement.md` | engagement record (§2) | One line explaining each field, including `model_use_notes` (0.2.0) |
+| `00-charter/scope.md` | `type: charter-scope`, `model_use`; from 0.2.0 also `model_use_notes`, `charter_status` (`draft` \| `approved`), `approved_on`, `approved_by` | Objectives, Boundaries (from 0.2.0 with `### In scope` and `### Out of scope`), Deliverables, Timeline, Constraints (0.2.0), **Model use** (`Current policy:` and, from 0.2.0, `Restrictions:` lines; says `engagement.md` is authoritative) |
 | `00-charter/questions.md` | `type: collection`, `holds: question` | Guidance + "No questions yet" |
 | `00-charter/hypotheses.md` | `type: collection`, `holds: hypothesis` | same |
 | `00-charter/assumptions.md` | `type: collection`, `holds: assumption` | same |
@@ -145,7 +148,7 @@ guidance and front matter, and no objects (FR-005).
 | `10-sources/index.md` | `type: source-index` | Table header: ID, title, type, date, origin, status, restricted |
 | `60-log/decisions.md` | `type: collection`, `holds: decision` | Guidance |
 | `60-log/lessons.md` | `type: collection`, `holds: lesson` | Guidance, plus a note on anonymizing before sharing |
-| `60-log/changelog.md` | `type: changelog` | Entry format: date, object ID, event (supersede/clarify/correct), reason, trigger |
+| `60-log/changelog.md` | `type: changelog` | Entry format: date, subject, event, reason, trigger, with an optional `> ` detail block. From 0.2.0 the guidance follows the shared change convention (002 `contracts/change-convention.md`): events `supersede`, `correct`, `clarify`, `reject`, `relink`, `scope-change`, `model-use`, `approve-charter` |
 
 ## 5. Canonical layout
 
@@ -159,7 +162,8 @@ _inbox/  _templates/  00-charter/  10-sources/  10-sources/raw/  10-sources/extr
 ~~~
 
 **Protected areas** (refresh never touches them, FR-023): everything except `_templates/`,
-the `.claude/skills/<name>/` folders listed in the manifest, `.cairn/`, and the
+the `.claude/skills/<name>/` folders listed in the manifest, `.claude/settings.json`
+(0.2.0), `.cairn/`, and the
 `framework_version:` line of `engagement.md`.
 
 ## 6. Framework manifest (`.cairn/manifest.json`)

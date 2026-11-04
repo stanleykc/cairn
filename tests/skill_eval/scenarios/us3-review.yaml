@@ -1,0 +1,16 @@
+name: Review and approve a drafted charter (US3; SC-007)
+fixture: drafted
+turns:
+  - "/charter No changes this week, let's go straight to the review. Approve Q-001 and Q-002. Reject H-001: too broad (trigger: rethinking). For A-001, change only the wording to 'Order volumes stay within 10% of last year until the end of December'; same meaning, reason: clearer end date, trigger: rethinking."
+  - "Now approve the whole charter. I'm the approver: Test Lead."
+  - "Confirmed, go ahead."
+expect:
+  item_status: {Q-001: active, Q-002: active, Q-003: active, H-001: rejected, H-002: active, A-001: active}
+  entry_text_unchanged: [H-001, Q-003]
+  files_contain:
+    00-charter/hypotheses.md: ["too broad"]
+    60-log/changelog.md: ["· H-001 · reject · ", "· A-001 · clarify · ", "· charter · approve-charter · approved by Test Lead · -"]
+    00-charter/assumptions.md: ["until the end of December"]
+  files_match:
+    00-charter/scope.md: ["^charter_status: approved", '^approved_by: "Test Lead"']
+  transcript_not_contains: ["client-ready"]

@@ -1,0 +1,14 @@
+name: Consultant stops partway (US1-6, FR-022, FR-039)
+fixture: fresh
+model_use: allowed
+turns:
+  - "/charter"
+  - "Objectives: cut order-to-ship time by 30% in the north DCs."
+  - "Skip the rest of scope for now. One key question, raised by me: why is order-to-ship slow in the north DCs? I have to stop here: save what we have and show me the end summary."
+expect:
+  item_status: {Q-001: proposed}
+  files_contain:
+    00-charter/scope.md: ["30%"]
+  transcript_contains: ["Not covered", "Stakeholders"]
+  transcript_count:
+    "(don't|do not) paste": [0, 0]

@@ -1,7 +1,8 @@
 """`cairn refresh`: bring templates and Cairn skills up to the running framework version (R17).
 
 Writes only under `_templates/`, the manifest-listed or bundled `.claude/skills/<name>/`
-folders and `.cairn/`, plus the single `framework_version:` line of `engagement.md`.
+folders, `.claude/settings.json` and `.cairn/`, plus the single `framework_version:` line
+of `engagement.md`.
 All-or-nothing: on failure every changed file is restored from memory.
 """
 
@@ -22,6 +23,8 @@ _FRAMEWORK_AREAS = ("_templates/", layout.SKILLS_DIR + "/")
 
 
 def _in_framework_area(rel: str) -> bool:
+    if rel == layout.SETTINGS_PATH:
+        return True
     return rel.startswith(_FRAMEWORK_AREAS) and ".." not in Path(rel).parts
 
 

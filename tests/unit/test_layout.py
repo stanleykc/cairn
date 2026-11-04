@@ -1,3 +1,4 @@
+import json
 import re
 from pathlib import Path
 
@@ -152,3 +153,42 @@ def test_template_asset(type_, prefix, name):
 def test_seed_assets_have_no_real_ids():
     for path in (PACKAGE_ASSETS / "seed").rglob("*.md"):
         assert not REAL_ID.search(path.read_text()), path
+
+
+def test_framework_files_skip_bytecode_caches(tmp_path):
+    skill = tmp_path / "skills" / "demo"
+    (skill / "scripts" / "__pycache__").mkdir(parents=True)
+    (skill / "SKILL.md").write_text("---\nname: demo\n---\n")
+    (skill / "scripts" / "run.py").write_text("print(1)\n")
+    (skill / "scripts" / "__pycache__" / "run.cpython-39.pyc").write_bytes(b"\0")
+    for _, _, name in layout.TEMPLATES:
+        (tmp_path / "templates").mkdir(exist_ok=True)
+        (tmp_path / "templates" / name).write_text("x")
+    skill_files = [rel for rel in layout.framework_files(tmp_path) if rel.startswith(".claude/")]
+    assert skill_files == [".claude/skills/demo/SKILL.md", ".claude/skills/demo/scripts/run.py"]
+
+
+def _skill(root: Path, name: str, allowed: str | None) -> None:
+    folder = root / "skills" / name
+    folder.mkdir(parents=True)
+    extra = f"allowed-tools: {allowed}\n" if allowed is not None else ""
+    (folder / "SKILL.md").write_text(f"---\nname: {name}\n{extra}---\n")
+
+
+def test_skill_permissions_collect_bash_rules(tmp_path):
+    _skill(tmp_path, "alpha", "Read, Edit, Bash(python3 *a.py*), Bash(git status)")
+    _skill(tmp_path, "beta", "Read Bash(python3 *a.py*) Bash(python3 *b.py*)")
+    _skill(tmp_path, "gamma", None)
+    assert layout.skill_permissions(tmp_path) == [
+        "Bash(python3 *a.py*)", "Bash(git status)", "Bash(python3 *b.py*)"]
+
+
+def test_settings_file_only_when_rules_exist(tmp_path):
+    (tmp_path / "templates").mkdir()
+    for _, _, name in layout.TEMPLATES:
+        (tmp_path / "templates" / name).write_text("x")
+    _skill(tmp_path, "plain", "Read, Edit")
+    assert layout.SETTINGS_PATH not in layout.framework_files(tmp_path)
+    _skill(tmp_path, "helper", "Read, Bash(python3 *h.py*)")
+    settings = json.loads(layout.framework_files(tmp_path)[layout.SETTINGS_PATH])
+    assert settings == {"permissions": {"allow": ["Bash(python3 *h.py*)"]}}

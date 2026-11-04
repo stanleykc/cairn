@@ -20,7 +20,9 @@ Rebuilding the manifest is out of scope for this feature.
 
 - Paths are POSIX, relative to the engagement root, and sorted.
 - `files` lists every framework-provided file: everything under `_templates/`, plus every
-  file of each bundled skill. Seed files are **not** listed. They belong to the
+  file of each bundled skill, plus `.claude/settings.json` when any bundled skill declares
+  `Bash(...)` rules in its `allowed-tools` (framework 0.2.0; the file pre-approves exactly
+  those rules for the engagement). Seed files are **not** listed. They belong to the
   engagement once they are created.
 - A skill folder in `.claude/skills/` that isn't in `files` belongs to the consultant, and
   refresh never touches it.

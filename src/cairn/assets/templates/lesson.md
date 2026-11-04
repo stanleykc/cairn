@@ -15,6 +15,8 @@ contradicts: []           # IDs
 derived_from: []          # IDs
 supersedes: []            # IDs
 clarifies: []             # IDs
+change_reason: ""         # one line: reason for the latest supersede or reject
+change_trigger: ""        # new-evidence | client-feedback | rethinking
 created: "YYYY-MM-DD"
 polarity: ""              # positive | negative
 learned_from: []          # D/X/H-IDs
