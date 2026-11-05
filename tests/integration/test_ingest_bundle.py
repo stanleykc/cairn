@@ -115,7 +115,7 @@ def test_refresh_from_020_adds_ingest(tmp_path, git_env):
     assert not (eng / ".claude" / "skills" / "ingest").exists()
     result = run_cairn("refresh", cwd=eng, env=git_env)
     assert result.returncode == 0, result.stderr
-    assert "framework 0.2.0 → 0.3.0" in result.stdout
+    assert "framework 0.2.0 → 0.4.0" in result.stdout
     for rel in SKILL_FILES:
         assert (eng / ".claude" / "skills" / "ingest" / rel).read_bytes() == (SKILL_DIR / rel).read_bytes(), rel
     assert (eng / "_templates" / "source.md").read_bytes() == (PACKAGE_ASSETS / "templates" / "source.md").read_bytes()

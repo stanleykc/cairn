@@ -1,0 +1,12 @@
+name: A scanned PDF with no text gets the "do instead" guidance (004 G7)
+fixture: fresh
+model_use: allowed
+documents: [sow-scanned.pdf]
+documents_allowed: [sow-scanned.pdf]
+turns:
+  - "/charter Use the SOW in 10-sources/raw/sow-scanned.pdf"
+  - "OK. The objective is to cut order-to-ship time by 30% in the north DCs. Stop here and show me the end summary."
+expect:
+  transcript_contains: ["10-sources/raw", "paste"]
+  files_contain:
+    00-charter/scope.md: ["30%"]

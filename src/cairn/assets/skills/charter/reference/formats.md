@@ -238,3 +238,27 @@ The full rules are in `reference/change-convention.md`. Shape:
 
 Append newest last. The first event replaces the "No changes yet." line. `model-use`
 events are written by `charter.py model-use`, never by hand.
+
+## Items drawn from a document
+
+When the consultant confirmed an answer you drafted from a document
+(`reference/interview.md`, "Drafting from a document"):
+
+- **Q, H and A entries.** `origin` stays `consultant-note`. Never cite a source ID
+  (`S-###`) and never write `origin: client-document`. If the item was confirmed as
+  drafted or lightly edited, `confidence_reason` starts with
+  `From <document name>, confirmed by the consultant`, for example
+  `"From sow-2026-10.pdf, confirmed by the consultant; dates match the signed SOW"`. If the
+  consultant rewrote it in their own words, write an ordinary reason.
+- **`<document name>`** is the file name relative to `10-sources/raw/` (as `doc` returned
+  it in `document`), or `pasted text (<the consultant's description>)`.
+- **Scope, stakeholders and lenses** have no per-item provenance field. After saving the
+  topics drawn from a document, append one changelog line per document used in the
+  session, listing those topics (append again for topics drawn later):
+
+```text
+2026-11-05 · charter · drew Objectives, Boundaries, Deliverables, Timeline from sow-2026-10.pdf (consultant confirmed)
+```
+
+  This line records provenance; it is not a change event, so it has no reason or trigger.
+  Separate topics with commas, never with ` · `.

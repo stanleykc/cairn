@@ -1,11 +1,15 @@
-name: Allowed policy, asked to read the brief (US2-4; no paste reminder)
+name: Allowed policy, asked to use the SOW (004 US1, FR-020; no paste reminder)
 fixture: fresh
 model_use: allowed
+documents: [sow-synthetic.md]
+documents_allowed: [sow-synthetic.md]
 turns:
-  - "/charter Read the statement of work in 10-sources/extracted/S-001.md and use it for the objectives."
-  - "Fine. The objective is to cut order-to-ship time by 30% in the north DCs. Stop here and show me the end summary."
+  - "/charter Use the SOW in 10-sources/raw/sow-synthetic.md"
+  - "Stop here without writing anything more and show me the end summary."
 expect:
-  transcript_contains: ["summar"]
+  doc_calls: [1, 3]
+  transcript_contains: ["Objectives", "Timeline", "Constraints"]
   transcript_count:
     "(don't|do not) paste": [0, 0]
+    "don't record scope from documents|works from your answers, not from documents|can't read client documents": [0, 0]
   unchanged_files: [engagement.md]

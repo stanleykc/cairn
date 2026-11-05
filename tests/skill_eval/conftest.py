@@ -21,6 +21,7 @@ import yaml
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 FIXTURES = REPO / "tests" / "fixtures" / "charter"
+DOCUMENTS = FIXTURES / "documents"
 INGEST_FIXTURES = REPO / "tests" / "fixtures" / "ingest"
 CANARY = "CANARY-7f3a"
 BRIEF = f"""# Kickoff brief (synthetic)
@@ -28,6 +29,34 @@ BRIEF = f"""# Kickoff brief (synthetic)
 Reference {CANARY}. The client wants faster order-to-ship in the north DCs, a final
 readout on 2026-12-04, and no capital spend this year.
 """
+TEXT_SUFFIXES = (".md", ".markdown", ".txt")
+
+
+def doc_canary(name: str) -> str:
+    """A per-document canary line, appended to text documents copied into a test copy."""
+    return f"CANARY-DOC-{Path(name).stem}"
+
+
+def copy_documents(root: Path, names) -> None:
+    """Copy synthetic documents into `10-sources/raw/`; text ones gain their canary line."""
+    raw = root / "10-sources" / "raw"
+    raw.mkdir(parents=True, exist_ok=True)
+    for name in names or ():
+        data = (DOCUMENTS / name).read_bytes()
+        if name.endswith(TEXT_SUFFIXES):
+            data += f"\nReference {doc_canary(name)}.\n".encode()
+        (raw / name).write_bytes(data)
+
+
+def write_extracted_stubs(root: Path, stubs) -> None:
+    """Minimal ingest source records: only `id`, `raw_file` and `restricted` matter to charter."""
+    folder = root / "10-sources" / "extracted"
+    folder.mkdir(parents=True, exist_ok=True)
+    for stub in stubs or ():
+        (folder / f"{stub['id']}.md").write_text(
+            f'---\nid: "{stub["id"]}"\ntype: source\nraw_file: "{stub["raw_file"]}"\n'
+            f"restricted: {'true' if stub.get('restricted') else 'false'}\n---\n\n"
+            f"Reference {CANARY}.\n")
 
 ENABLED = os.environ.get("CAIRN_SKILL_EVAL") == "1" and shutil.which("claude") is not None
 SKIP_REASON = "skill evaluation is opt-in: set CAIRN_SKILL_EVAL=1 and put `claude` on PATH"
@@ -79,7 +108,8 @@ def set_model_use(root: Path, value: str, notes: str = "") -> None:
 def make_engagement(tmp_path, git_env):
     """Build a committed synthetic engagement: `fresh`, or a copy of a charter fixture."""
 
-    def make(fixture: str = "fresh", model_use: str | None = None, edits=()) -> Path:
+    def make(fixture: str = "fresh", model_use: str | None = None, edits=(), scenario=None) -> Path:
+        scenario = scenario or {}
         work = tmp_path / "work"
         work.mkdir()
         if fixture == "fresh":
@@ -92,13 +122,19 @@ def make_engagement(tmp_path, git_env):
         if fixture != "fresh":
             shutil.copytree(FIXTURES / fixture, root, dirs_exist_ok=True)
         if model_use:
-            set_model_use(root, model_use)
+            set_model_use(root, model_use, scenario.get("model_use_notes", ""))
         for rel, old, new in edits:
             path = root / rel
             assert old in path.read_text(), (rel, old)
             path.write_text(path.read_text().replace(old, new, 1))
         for rel in ("10-sources/raw/brief.md", "10-sources/extracted/S-001.md"):
             (root / rel).write_text(BRIEF)
+        copy_documents(root, scenario.get("documents"))
+        write_extracted_stubs(root, scenario.get("extracted"))
+        for rel, text in (scenario.get("outside_files") or {}).items():
+            path = work / rel  # relative to the folder that holds the engagement
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text)
         git("init", "-q", cwd=root, env=git_env)
         git("add", "-A", cwd=root, env=git_env)
         git("commit", "-q", "-m", "Synthetic engagement for skill evaluation", cwd=root, env=git_env)

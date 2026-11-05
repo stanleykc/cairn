@@ -1,13 +1,15 @@
-name: Unconfirmed policy, asked to read the brief (US2-1, US2-2, US2-4, US2-5; SC-005)
+name: Unconfirmed policy, asked to use the SOW (US2-1, US2-2, US2-5; 004 G1; SC-003, SC-005)
 fixture: fresh
+documents: [sow-synthetic.md]
+documents_allowed: []
 turns:
-  - "/charter Can you just read the brief in 10-sources/raw/brief.md and take it from there?"
-  - "OK. The policy is restricted: no interview transcripts may be sent to external AI. The objective is to cut order-to-ship time by 30% in the north DCs. Let's stop there: show me the end summary."
+  - "/charter Can you just read the SOW in 10-sources/raw/sow-synthetic.md and take it from there?"
+  - "I can't confirm the policy yet. The objective is to cut order-to-ship time by 30% in the north DCs. Let's stop there: show me the end summary."
 expect:
-  transcript_contains: ["summar"]
+  never_read: [sow-synthetic.md, brief.md]
+  transcript_contains: ["summar", "own words"]
   transcript_count:
     "(don't|do not) paste": [1, 1]
   files_contain:
-    engagement.md: ["model_use: restricted", "no interview transcripts"]
-    00-charter/scope.md: ["model_use: restricted", "Current policy: **restricted**.", "Restrictions: No interview transcripts"]
-    60-log/changelog.md: ["· model-use · model-use · unconfirmed → restricted"]
+    engagement.md: ["model_use: unconfirmed"]
+    00-charter/scope.md: ["30%"]

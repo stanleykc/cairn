@@ -1,0 +1,25 @@
+name: SOW pre-fills the interview; confirm, correct, skip; provenance (004 US1, US3; SC-001, SC-002)
+fixture: fresh
+model_use: allowed
+documents: [sow-synthetic.md]
+documents_allowed: [sow-synthetic.md]
+turns:
+  - "/charter Use the SOW in 10-sources/raw/sow-synthetic.md"
+  - "Objectives and boundaries: confirm both as drafted. Deliverables: correct the diagnostic readout date to 2026-11-24, otherwise confirm. Timeline: confirm, except the diagnostic readout is 2026-11-24 as well. Constraints: skip."
+  - "Stakeholders: confirm as drafted. The sentence about carrier pickup delays: keep it as an assumption, basis 'stated in the SOW', no linked questions. Key questions, raised by me: why is order-to-ship slow in the north DCs? priority high. No hunches."
+  - "Skip lenses, suggestions and the review. Stop here and show me the end summary."
+expect:
+  files_contain:
+    00-charter/scope.md: ["2026-11-24", "30%", "Inbound supplier logistics"]
+    00-charter/stakeholders.md: ["Pat Sponsor", "Sam Planner"]
+    60-log/changelog.md: ["drew", "from sow-synthetic.md (consultant confirmed)"]
+  files_not_contain:
+    00-charter/scope.md: ["2026-11-20"]
+  files_match:
+    00-charter/assumptions.md: ['^confidence_reason: "From sow-synthetic\.md, confirmed by the consultant', '^origin: consultant-note']
+  files_not_match:
+    00-charter/questions.md: ['^origin: client-document', 'S-\d{3}']
+    00-charter/assumptions.md: ['^origin: client-document', 'S-\d{3}']
+    00-charter/hypotheses.md: ['^origin: client-document', 'S-\d{3}']
+  item_status: {Q-001: proposed, A-001: proposed}
+  transcript_contains: ["Not covered", "Constraints", "From documents: sow-synthetic.md"]

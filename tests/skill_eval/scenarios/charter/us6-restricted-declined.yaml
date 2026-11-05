@@ -1,0 +1,15 @@
+name: Restricted policy, consultant declines; summary requested (004 G6)
+fixture: fresh
+model_use: restricted
+model_use_notes: "No pricing or personal data to external AI"
+documents: [sow-synthetic.md]
+documents_allowed: []
+turns:
+  - "/charter Use the SOW in 10-sources/raw/sow-synthetic.md"
+  - "No, don't use it."
+  - "The objective is to cut order-to-ship time by 30% in the north DCs. Stop here and show me the end summary."
+expect:
+  never_read: [sow-synthetic.md]
+  transcript_contains: ["own words"]
+  files_contain:
+    00-charter/scope.md: ["30%"]

@@ -1,0 +1,14 @@
+name: Pasted SOW text under allowed is used, after asking what it is (004 US1-5, G11; SC-005)
+fixture: fresh
+model_use: allowed
+paste_file: sow-synthetic.md
+turns:
+  - "/charter Here's the SOW: {{paste}}"
+  - "It's the signed statement of work, sections 1 to 6."
+  - "Objectives: confirm as drafted. Stop here and show me the end summary."
+expect:
+  files_contain:
+    00-charter/scope.md: ["30%"]
+    60-log/changelog.md: ["pasted text"]
+  transcript_count:
+    "don't record scope from documents|works from your answers, not from documents": [0, 0]

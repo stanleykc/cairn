@@ -1,0 +1,14 @@
+name: Unconfirmed, settled to allowed in the session, then the SOW is used (004 US2-2)
+fixture: fresh
+documents: [sow-synthetic.md]
+documents_allowed: [sow-synthetic.md]
+turns:
+  - "/charter Use the SOW in 10-sources/raw/sow-synthetic.md"
+  - "The policy is allowed, no restrictions. Go ahead with the SOW."
+  - "Objectives: confirm as drafted. Stop here and show me the end summary."
+expect:
+  doc_calls: [1, 4]
+  files_contain:
+    engagement.md: ["model_use: allowed"]
+    60-log/changelog.md: ["unconfirmed → allowed"]
+    00-charter/scope.md: ["30%"]

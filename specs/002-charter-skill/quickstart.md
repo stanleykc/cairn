@@ -73,7 +73,9 @@ give one hunch that matches no question.
 
 Expected:
 - The policy is asked about first, and the paste reminder is shown once (US2-1, US2-5).
-- The request to read the brief is declined, with a request for a summary (US2-4).
+- The request to read the brief is declined, with a request for a summary (US2-4). Since
+  feature 004 this holds while the policy is `unconfirmed` (the brief here is
+  `brief.md`); once it permits documents, see `specs/004-charter-from-documents/quickstart.md`.
   `grep -r CANARY-7f3a .claude ~/.claude/projects 2>/dev/null` finds nothing from this
   session.
 - Objectives and the readout date are shown back for confirmation, not asked again

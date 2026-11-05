@@ -1,0 +1,13 @@
+name: Unsupported format and an ingest-restricted file each get their "do instead" (004 G4, G5)
+fixture: fresh
+model_use: allowed
+documents: [sow-legacy.doc, sow-synthetic.pdf]
+documents_allowed: []
+extracted:
+  - {id: S-002, raw_file: sow-synthetic.pdf, restricted: true}
+turns:
+  - "/charter Draft from 10-sources/raw/sow-legacy.doc and 10-sources/raw/sow-synthetic.pdf"
+  - "OK. The objective is to cut order-to-ship time by 30% in the north DCs. Stop here and show me the end summary."
+expect:
+  never_read: [sow-legacy.doc, sow-synthetic.pdf]
+  transcript_contains: ["PDF", ".docx", ".txt", "own words", "ingest"]

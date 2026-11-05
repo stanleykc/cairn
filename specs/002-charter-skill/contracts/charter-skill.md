@@ -20,6 +20,11 @@ stops with the script's "Not inside a Cairn engagement…" message (FR-002).
 See research R21: `name: charter`, a one-line double-quoted `description`, `argument-hint`, and
 `allowed-tools: Read, Edit, Write, Bash(python3 *charter.py*)`.
 
+Since feature 004 the `description` ends "Can draft answers from a SOW, brief or change
+order in 10-sources/raw/ (or pasted), once the model-use policy allows it." (it no longer
+says "Never reads client documents."), and `argument-hint` adds "[a document in
+10-sources/raw/ to draft from]". `allowed-tools` is unchanged.
+
 ## Files
 
 ~~~text
@@ -41,7 +46,13 @@ status ─┬─ exit 2 ──────────────────�
         └─ ok
             ▼
    model_use == unconfirmed? ── ask; consultant may decline ──▶ model-use --set    (FR-004/005)
-   model_use in {restricted, unconfirmed}? ── remind once: don't paste client text  (FR-007)
+   model_use in {restricted, unconfirmed}? ── remind once: don't paste client text
+                              until the policy allows it                            (FR-007)
+   document named? ── charter.py doc ─┬─ exit 4: say what happened, why, what to do
+                                      │          instead; plain interview            (004)
+                                      └─ exit 0: Read it, list covered topics, draft
+                                                 each one for confirm/correct/skip   (004)
+   document pasted? ── allowed: use · restricted: ask · unconfirmed: don't use      (004)
             ▼
    charter_state == empty ──▶ INTERVIEW (topics in order, confirm what's known,
                               save each confirmed topic, run check)                 (FR-008–022)
@@ -71,10 +82,12 @@ The consultant can stop at any point. Everything confirmed so far is already sav
 
 ## Never
 
-The first section of `SKILL.md` lists these as hard rules:
+The first section of `SKILL.md` lists these as hard rules. Rules 1 and 10 were changed and
+added by feature 004 (`specs/004-charter-from-documents/contracts/charter-skill-delta.md`):
 
-1. Never open, list, search or read anything in `10-sources/`, or any document the
-   consultant offers. Decline, and ask for a summary instead (FR-006).
+1. Never list or search `10-sources/`. Never Read any file there, or anywhere else, except
+   a document the consultant named and `charter.py doc` cleared (exit 0), at the path it
+   returned. Never use pasted document text unless the policy permits it (Step 2).
 2. Never read `engagement.md`. Use `charter.py status` (R7).
 3. Never delete an entry, row or bullet, and never change an existing item's claim in place
    (FR-021).
@@ -87,6 +100,8 @@ The first section of `SKILL.md` lists these as hard rules:
    (FR-038).
 9. Never write a hypothesis without a question, or a revision without a reason and a
    trigger (FR-015, FR-023).
+10. Never write anything drawn from a document without the consultant confirming that
+    topic.
 
 ## End summary (FR-039)
 
@@ -98,12 +113,16 @@ Model use: <value>[ — <notes>]   ⚠ settle before ingesting any source   (whe
 
 Written:   Q-001, Q-002, H-001, A-001 · scope: Objectives, Timeline · 3 stakeholders · 4 lenses
 Changed:   H-002 → H-004 (pending approval) · A-001 rejected · scope/Timeline
+From documents: sow-2026-10.pdf → Objectives, Boundaries, Deliverables, Timeline
 Not covered: Constraints, Evaluation criteria
 Review these (they link to changed items): O-014 (questions), F-003 (questions)
 Gaps:      Q-002 has no hypothesis · Deliverable "Board deck" has no date
 
 Next: review and approve the charter · add originals to 10-sources/raw/ · run ingest
 ~~~
+
+`From documents` (feature 004) is left out when no document was used. The `Next:` hint
+about `10-sources/raw/` and `ingest` stays while a document used is not yet ingested.
 
 ## Guarantees for later skills
 

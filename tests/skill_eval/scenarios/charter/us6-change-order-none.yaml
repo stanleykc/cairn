@@ -1,0 +1,10 @@
+name: A document that matches the charter yields no changes (004 G15)
+fixture: approved
+documents: [sow-synthetic.md]
+documents_allowed: [sow-synthetic.md]
+turns:
+  - "/charter The SOW is in 10-sources/raw/sow-synthetic.md. Does it change anything in the charter? Only compare scope and stakeholders. If nothing changes, write nothing and show me the end summary."
+expect:
+  transcript_contains: ["no change"]
+  unchanged_files: [00-charter/scope.md, 00-charter/questions.md, 00-charter/hypotheses.md,
+                    00-charter/assumptions.md, 00-charter/stakeholders.md, 00-charter/lenses.md]

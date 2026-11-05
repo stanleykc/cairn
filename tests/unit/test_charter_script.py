@@ -146,7 +146,7 @@ def test_bad_arguments_exit_3(empty):
 def test_version():
     result = subprocess.run([sys.executable, str(SCRIPT), "--version"], capture_output=True, text=True)
     assert result.returncode == 0
-    assert result.stdout.strip() == "charter.py 0.2.0"
+    assert result.stdout.strip() == "charter.py 0.3.0"
 
 
 # --- Parser (R4) -------------------------------------------------------------------
@@ -291,6 +291,40 @@ def test_sources_never_touched_in_process(charter, empty, monkeypatch, capsys):
     capsys.readouterr()
     assert touched, "the spies saw no file access"
     assert not [p for p in touched if "10-sources" in p]
+
+
+@pytest.mark.parametrize("named", ["sow.docx", "sow.md"])
+def test_doc_touches_only_named_file_and_extracted_front_matter(charter, empty, monkeypatch, capsys, named):
+    """004 narrows R6: `doc` may open the named raw `.docx` and extracted front matter, nothing else."""
+    run_json(empty, "model-use", "--set", "allowed")
+    raw = empty / "10-sources" / "raw"
+    raw.mkdir(parents=True)
+    (raw / "brief.md").write_text("CANARY-7f3a\n")
+    (raw / "sow.md").write_text("# SOW\n")
+    (raw / "sow.docx").write_bytes((FIXTURES / "documents" / "sow-synthetic.docx").read_bytes())
+    ext = empty / "10-sources" / "extracted"
+    ext.mkdir()
+    (ext / "S-001.md").write_text('---\nid: "S-001"\nraw_file: "brief.md"\nrestricted: true\n---\n\nBody.\n')
+    (ext / "notes.md").write_text("not a source\n")
+    touched = []
+
+    def spy(original):
+        def wrapper(*args, **kwargs):
+            touched.append(str(args[0]))
+            return original(*args, **kwargs)
+        return wrapper
+
+    for mod, name in ((os, "walk"), (os, "scandir"), (os, "listdir"), (builtins, "open"),
+                      (Path, "read_text"), (Path, "read_bytes"), (Path, "iterdir")):
+        monkeypatch.setattr(mod, name, spy(getattr(mod, name)))
+    assert charter.main(["--root", str(empty), "doc", named]) == 0
+    capsys.readouterr()
+    under = {Path(p).resolve() for p in touched if "10-sources" in p}
+    allowed_paths = {ext.resolve(), (ext / "S-001.md").resolve()}
+    if named.endswith(".docx"):
+        allowed_paths.add((raw / named).resolve())
+    assert under <= allowed_paths, under - allowed_paths
+    assert (ext / "S-001.md").resolve() in under
 
 
 def test_content_folders_match_layout(charter):
@@ -878,3 +912,329 @@ def test_many_questions(empty, without_priority, fires):
 def test_gaps_do_not_affect_check(empty):
     assert gaps(empty)
     assert run_json(empty, "check")["ok"] is True
+
+
+# --- 004: `doc` (contracts/charter-doc-command.md) ----------------------------------
+
+DOCS = FIXTURES / "documents"
+INGEST_MAKE = Path(__file__).resolve().parents[1] / "fixtures" / "ingest" / "make_fixtures.py"
+CAP = 200_000
+
+
+def _load(name: str, path: Path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    saved, sys.dont_write_bytecode = sys.dont_write_bytecode, True
+    try:
+        spec.loader.exec_module(module)
+    finally:
+        sys.dont_write_bytecode = saved
+    return module
+
+
+@pytest.fixture(scope="module")
+def make():
+    return _load("charter_ingest_make", INGEST_MAKE)
+
+
+def with_policy(tmp_path: Path, fixture: str, policy: str, notes: str = "") -> Path:
+    root = copy_fixture(tmp_path, fixture)
+    record = _load_policy(root)
+    if record != (policy, notes):
+        run_json(root, "model-use", "--set", policy, "--notes", notes)
+    (root / "10-sources" / "raw").mkdir(parents=True, exist_ok=True)
+    return root
+
+
+def _load_policy(root: Path) -> tuple:
+    status = run_json(root, "status")["engagement"]
+    return status["model_use"], status["model_use_notes"]
+
+
+def put(root: Path, name: str, data: bytes = None, as_name: str = None) -> Path:
+    dest = root / "10-sources" / "raw" / (as_name or name)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_bytes(data if data is not None else (DOCS / name).read_bytes())
+    return dest
+
+
+def extracted(root: Path, id_: str, raw_file: str, restricted: bool) -> None:
+    folder = root / "10-sources" / "extracted"
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / f"{id_}.md").write_text(
+        f'---\nid: "{id_}"\ntype: source\nraw_file: "{raw_file}"\n'
+        f"restricted: {'true' if restricted else 'false'}\n---\n\nCANARY-EXTRACTED body text.\n")
+
+
+def doc(root: Path, *args, expect=0) -> dict:
+    result = run(root, "doc", *args)
+    assert result.returncode == expect, result.stderr + result.stdout
+    return json.loads(result.stdout)
+
+
+@pytest.fixture
+def allowed(tmp_path) -> Path:
+    return with_policy(tmp_path, "empty", "allowed")
+
+
+@pytest.fixture
+def unconfirmed(tmp_path) -> Path:
+    return with_policy(tmp_path, "empty", "unconfirmed")
+
+
+@pytest.fixture
+def restricted(tmp_path) -> Path:
+    return with_policy(tmp_path, "empty", "restricted", "No pricing or personal data to external AI")
+
+
+def assert_refused(out: dict, code: str, *needles: str) -> None:
+    assert out["refused"] == code
+    assert out["detail"].strip()
+    assert out["next_step"].strip()
+    for needle in needles:
+        assert needle in out["next_step"], (needle, out["next_step"])
+
+
+def test_doc_fixtures_are_current(tmp_path):
+    gen = _load("charter_make_documents", DOCS / "make_documents.py")
+    names = gen.write(tmp_path)
+    for name in names:
+        assert (tmp_path / name).read_bytes() == (DOCS / name).read_bytes(), name
+
+
+def test_doc_policy_unconfirmed(unconfirmed):
+    put(unconfirmed, "sow-synthetic.md")
+    out = doc(unconfirmed, "sow-synthetic.md", expect=4)
+    assert_refused(out, "policy-unconfirmed", "allowed", "restricted", "own words")
+    assert out["document"] == "sow-synthetic.md"
+
+
+def test_doc_unconfirmed_ignores_permitted(unconfirmed):
+    put(unconfirmed, "sow-synthetic.md")
+    assert doc(unconfirmed, "sow-synthetic.md", "--permitted", expect=4)["refused"] == "policy-unconfirmed"
+
+
+def test_doc_policy_checked_before_path(unconfirmed, tmp_path):
+    outside = tmp_path / "Downloads" / "sow.pdf"
+    outside.parent.mkdir()
+    outside.write_text("CANARY-OUTSIDE\n")
+    out = doc(unconfirmed, str(outside), expect=4)
+    assert out["refused"] == "policy-unconfirmed"
+
+
+def test_doc_outside_raw(allowed, tmp_path):
+    outside = tmp_path / "Downloads" / "sow.pdf"
+    outside.parent.mkdir()
+    outside.write_text("CANARY-OUTSIDE\n")
+    out = doc(allowed, str(outside), expect=4)
+    assert_refused(out, "outside-raw", "10-sources/raw/", "cp ", f'"{outside}"')
+    assert "CANARY" not in json.dumps(out)
+
+
+@pytest.mark.parametrize("arg", ["../engagement.md", "../../engagement.md", "../../00-charter/scope.md"])
+def test_doc_relative_escapes(allowed, arg):
+    out = doc(allowed, arg, expect=4)
+    assert out["refused"] == "outside-raw"
+    assert "type: engagement" not in json.dumps(out)
+
+
+def test_doc_symlink_leaving_raw(allowed, tmp_path):
+    target = tmp_path / "secret.md"
+    target.write_text("CANARY-LINK\n")
+    (allowed / "10-sources" / "raw" / "link.md").symlink_to(target)
+    out = doc(allowed, "link.md", expect=4)
+    assert out["refused"] == "outside-raw"
+    assert "CANARY" not in json.dumps(out)
+
+
+@pytest.mark.parametrize("arg", [".", "10-sources/raw"])
+def test_doc_raw_folder_itself(allowed, arg):
+    assert_refused(doc(allowed, arg, expect=4), "not-found", "extension")
+
+
+def test_doc_not_found(allowed):
+    out = doc(allowed, "missing-sow.pdf", expect=4)
+    assert_refused(out, "not-found", "extension", "10-sources/raw/")
+
+
+@pytest.mark.parametrize("name", ["sow-legacy.doc", "deck.pptx", "notes.pages", "scan.png"])
+def test_doc_unsupported_format(allowed, name):
+    put(allowed, "sow-legacy.doc", as_name=name)
+    out = doc(allowed, name, expect=4)
+    assert_refused(out, "unsupported-format", "PDF, .docx, .md, .txt")
+
+
+def test_doc_restricted_source(allowed):
+    put(allowed, "sow-synthetic.pdf")
+    extracted(allowed, "S-001", "other.pdf", restricted=True)
+    extracted(allowed, "S-002", "sow-synthetic.pdf", restricted=False)
+    extracted(allowed, "S-003", "sow-synthetic.pdf", restricted=True)
+    result = run(allowed, "doc", "sow-synthetic.pdf")
+    assert result.returncode == 4
+    out = json.loads(result.stdout)
+    assert_refused(out, "restricted-source", "own words", "ingest")
+    assert out["restricted_source"] == "S-003"
+    assert "CANARY" not in result.stdout
+
+
+def test_doc_unrestricted_extracted_source_is_fine(allowed):
+    put(allowed, "sow-synthetic.pdf")
+    extracted(allowed, "S-002", "sow-synthetic.pdf", restricted=False)
+    assert doc(allowed, "sow-synthetic.pdf")["format"] == "pdf"
+
+
+def test_doc_needs_permission(restricted):
+    put(restricted, "sow-synthetic.md")
+    out = doc(restricted, "sow-synthetic.md", expect=4)
+    assert_refused(out, "needs-permission", "own words")
+    assert out["model_use"] == "restricted"
+    assert out["model_use_notes"] == "No pricing or personal data to external AI"
+    assert "--permitted" in out["detail"]
+
+
+def test_doc_restricted_permitted(restricted):
+    put(restricted, "sow-synthetic.md")
+    out = doc(restricted, "sow-synthetic.md", "--permitted")
+    assert out["model_use"] == "restricted" and out["read_with"] == "Read"
+
+
+def test_doc_permitted_has_no_effect_under_allowed(allowed):
+    put(allowed, "sow-synthetic.md")
+    assert doc(allowed, "sow-synthetic.md", "--permitted") == doc(allowed, "sow-synthetic.md")
+
+
+@pytest.mark.parametrize("name,fmt", [
+    ("sow-synthetic.md", "md"), ("sow-synthetic.pdf", "pdf"), ("notes.markdown", "md"),
+    ("notes.txt", "txt"), ("SOW-UPPER.PDF", "pdf"),
+])
+def test_doc_read_formats(allowed, name, fmt):
+    source = {"md": "sow-synthetic.md", "pdf": "sow-synthetic.pdf", "txt": "sow-synthetic.md"}[fmt]
+    path = put(allowed, source, as_name=name)
+    out = doc(allowed, name)
+    assert out == {
+        "document": name, "path": str(path.resolve()), "format": fmt, "read_with": "Read",
+        "model_use": "allowed", "text": None, "truncated": False,
+    }
+    assert Path(out["path"]).is_absolute()
+
+
+@pytest.mark.parametrize("form", ["name", "engagement-relative", "absolute", "subfolder"])
+def test_doc_path_forms(allowed, form):
+    if form == "subfolder":
+        path = put(allowed, "sow-synthetic.md", as_name="client/sow.md")
+        arg, name = "client/sow.md", "client/sow.md"
+    else:
+        path = put(allowed, "sow-synthetic.md")
+        arg = {"name": "sow-synthetic.md", "engagement-relative": "10-sources/raw/sow-synthetic.md",
+               "absolute": str(path)}[form]
+        name = "sow-synthetic.md"
+    out = doc(allowed, arg)
+    assert (out["document"], out["path"]) == (name, str(path.resolve()))
+
+
+def test_doc_restricted_source_in_subfolder(allowed):
+    put(allowed, "sow-synthetic.md", as_name="client/sow.md")
+    extracted(allowed, "S-004", "client/sow.md", restricted=True)
+    assert doc(allowed, "10-sources/raw/client/sow.md", expect=4)["restricted_source"] == "S-004"
+
+
+# --- .docx and safety (T006) ---
+
+
+def test_doc_docx_text(allowed):
+    put(allowed, "sow-synthetic.docx")
+    out = doc(allowed, "sow-synthetic.docx")
+    assert (out["format"], out["read_with"], out["truncated"]) == ("docx", "text", False)
+    assert "next_step" not in out
+    lines = out["text"].splitlines()
+    assert "# Background" in lines and "# Objectives" in lines and "# Stakeholders" in lines
+    assert "Cut order-to-ship time by 30% in the north DCs." in lines
+    assert lines.index("# Objectives") < lines.index("Cut order-to-ship time by 30% in the north DCs.") \
+        < lines.index("# Timeline") < lines.index("2026-12-04: Final readout.")
+    assert "| Name | Role |" in lines
+    assert "| Pat Sponsor | VP Operations, sponsor |" in lines
+
+
+def test_doc_docx_heading_levels(allowed, make):
+    body = (make.para("Top", style="Heading1") + make.para("Sub", style="Heading2")
+            + make.para("Plain text."))
+    put(allowed, "x.docx", data=make.build_docx(body))
+    assert doc(allowed, "x.docx")["text"].splitlines() == ["# Top", "## Sub", "Plain text."]
+
+
+def test_doc_docx_codename_redacted(tmp_path):
+    root = with_policy(tmp_path, "codename", "allowed")
+    put(root, "sow-globex.docx")
+    result = run(root, "doc", "sow-globex.docx")
+    assert result.returncode == 0, result.stderr
+    assert "globex" not in result.stdout.lower()
+    assert "Statement of Work" in json.loads(result.stdout)["text"]
+
+
+def test_doc_docx_truncated(allowed, make):
+    paragraph = "Synthetic filler about pickup windows in the north DCs. " * 20
+    body = "".join(make.para(paragraph) for _ in range(250))
+    put(allowed, "long.docx", data=make.build_docx(body))
+    out = doc(allowed, "long.docx")
+    assert len(out["text"]) == CAP
+    assert out["truncated"] is True
+    assert "paste the sections" in out["next_step"] and "10-sources/raw/" in out["next_step"]
+
+
+@pytest.mark.parametrize("data", [b"not a zip at all", bytes.fromhex("D0CF11E0A1B11AE1") + b"\x00" * 504])
+def test_doc_docx_unreadable(allowed, data):
+    put(allowed, "bad.docx", data=data)
+    out = doc(allowed, "bad.docx", expect=4)
+    assert_refused(out, "unreadable", "10-sources/raw/", "paste")
+
+
+def test_doc_docx_without_text_is_unreadable(allowed, make):
+    put(allowed, "empty.docx", data=make.build_docx(""))
+    assert doc(allowed, "empty.docx", expect=4)["refused"] == "unreadable"
+
+
+def test_doc_docx_missing_document_part(allowed):
+    import io
+    import zipfile
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("[Content_Types].xml", "<Types/>")
+    put(allowed, "partless.docx", data=buf.getvalue())
+    assert doc(allowed, "partless.docx", expect=4)["refused"] == "unreadable"
+
+
+def _hashes(root: Path) -> dict:
+    import hashlib
+    return {p.relative_to(root).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in sorted(root.rglob("*")) if p.is_file() and not p.is_symlink()}
+
+
+def test_doc_never_writes(tmp_path):
+    for policy in ("unconfirmed", "allowed", "restricted"):
+        root = with_policy(tmp_path / policy, "empty", policy, "Notes" if policy == "restricted" else "")
+        for name in ("sow-synthetic.md", "sow-synthetic.pdf", "sow-synthetic.docx", "sow-legacy.doc"):
+            put(root, name)
+        put(root, "sow-synthetic.md", data=b"not a zip", as_name="bad.docx")
+        extracted(root, "S-001", "sow-synthetic.pdf", restricted=True)
+        before = _hashes(root)
+        for args in (["sow-synthetic.md"], ["sow-synthetic.docx"], ["sow-synthetic.docx", "--permitted"],
+                     ["sow-synthetic.pdf"], ["sow-legacy.doc"], ["missing.md"], ["bad.docx"],
+                     ["bad.docx", "--permitted"], ["../engagement.md"]):
+            assert run(root, "doc", *args).returncode in (0, 4)
+        assert _hashes(root) == before, policy
+
+
+def test_doc_large_docx_is_fast(allowed, make):
+    import time
+    page = "".join(make.para(f"Section {i}: synthetic notes on carrier handoff timing.", style="Heading2")
+                   + make.para("Inbound volume was within the planned range. " * 6)
+                   for i in range(12))
+    put(allowed, "forty.docx", data=make.build_docx(page * 40))
+    start = time.perf_counter()
+    out = doc(allowed, "forty.docx")
+    assert time.perf_counter() - start < 1.0
+    assert out["truncated"] is False and out["text"].count("## Section 0:") == 40
+
+
+def test_doc_usage_errors(allowed):
+    assert run(allowed, "doc").returncode == 3

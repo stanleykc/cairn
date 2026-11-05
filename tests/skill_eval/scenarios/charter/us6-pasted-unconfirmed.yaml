@@ -1,0 +1,11 @@
+name: Pasted SOW text under an unconfirmed policy is not used (004 G9; SC-003)
+fixture: fresh
+paste_file: sow-synthetic.md
+turns:
+  - "/charter Here's the SOW, it's the signed statement of work: {{paste}}"
+  - "I can't settle the policy yet. Stop here and show me the end summary."
+expect:
+  transcript_contains: ["own words"]
+  changed_files_not_contain: ["north DCs", "north-region", "Pat Sponsor", "Inbound supplier logistics"]
+  files_contain:
+    engagement.md: ["model_use: unconfirmed"]
