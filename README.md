@@ -30,7 +30,8 @@ for whoever comes next.
 - A folder convention for engagements, using plain markdown files with YAML front matter
 - Templates for each object type (observation, finding, issue, option, decision, lesson)
 - Agent skills for ingesting, extracting, synthesizing, researching, challenging and
-  drafting deliverables. The first one, `charter`, ships in `src/cairn/assets/skills/`.
+  drafting deliverables. The first two, `charter` and `ingest`, ship in
+  `src/cairn/assets/skills/`.
 
 ## Status
 
@@ -71,6 +72,19 @@ revisions. It never reads client documents. Its helper script needs `python3` 3.
 later (the macOS system Python works); the `cairn` command itself still needs 3.11+.
 Accept Claude Code's trust prompt the first time you open the engagement: the engagement's
 `.claude/settings.json` then lets the skill's helper run without asking each time.
+
+New engagements also include the `ingest` skill. Once `/charter` has settled the model-use
+policy, drop client material into `10-sources/raw/` and run `/ingest` inside the
+engagement. It turns each file into a verbatim, citable source in `10-sources/extracted/`
+(`S-###.md`) with your one line of context, and never changes the originals. Supported
+formats: PDF, Word (`.docx`), markdown, plain text, and meeting transcripts (`.vtt`,
+`.srt`, or text exports from Zoom, Teams, Meet and Otter). Under a `restricted` policy it
+asks before sending each file, and restricted files are recorded without being opened.
+`/ingest review` walks you through spot-checking, approving and correcting sources.
+Installing poppler is recommended but not required (`brew install poppler` or
+`apt install poppler-utils`): with it, PDF text is extracted and checked word for word;
+without it, only PDFs of up to 10 pages can be ingested, and they are marked for
+spot-checking. The helper needs `python3` 3.9 or later.
 
 When the framework gains new templates or skills, update an engagement with:
 

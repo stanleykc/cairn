@@ -118,6 +118,23 @@ R2, …). "002 R7" means decision R7 of the charter feature.
     are skipped with the install hint.
   - How well the page-count estimate holds up on the synthetic fixtures. It's only used
     until Read reports the real count.
+- **Results (checked 2026-11-05, Claude Code 2.1.318, poppler hidden from `PATH`)**:
+  - Read **with `pages`** fails without poppler: "pdftoppm is not installed. Install
+    poppler-utils … to enable PDF page rendering." Read **without `pages`** works: it opened
+    the 3-page text fixture whole and returned its text. Read requires `pages` for PDFs over
+    10 pages, so without poppler only PDFs of up to 10 pages can be read at all.
+  - Consequence: unchecked mode is limited to PDFs of at most 10 pages.
+    `extract` refuses a longer PDF without poppler (exit 5, `reason: "needs-poppler"`, with
+    the install hint; nothing is written), and the skill lists it under Skipped with the
+    hint. When the estimate is unknown (page objects compressed) and Read then reports more
+    than 10 pages, the skill leaves the source `in-progress` and asks the consultant to
+    install poppler; `extract --restart` then re-extracts it in checked mode under the same
+    ID. Such a file is not rejected, so it can be retried.
+  - Page-count estimate (`/Type /Page` objects, or the page tree's `/Count` when the page
+    objects are compressed) versus `pdfinfo` on every generated fixture: exact on all of
+    them (`text-table-chart` 3/3, `scanned` 2/2, `hard-page` 2/2, `long-40` 40/40,
+    `ops-review` 1/1, `ops-review-v2` 1/1). `encrypted.pdf` (estimate 1) and `not-a-pdf.pdf`
+    (estimate 0) are refused before the estimate matters.
 
 ## R5. Reading Word documents
 

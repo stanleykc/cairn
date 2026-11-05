@@ -8,7 +8,7 @@ calls the local poppler tools `pdftotext`, `pdfinfo` and `pdfimages` when they'r
 ~~~text
 python3 ingest.py [--root PATH] status [RAW ...]
 python3 ingest.py [--root PATH] extract RAW [--as {document,transcript}] [--sendable] [--restart]
-python3 ingest.py [--root PATH] register-restricted RAW
+python3 ingest.py [--root PATH] register-restricted RAW [--title T] [--material M] [--source-date D] [--provided-by P]
 python3 ingest.py [--root PATH] verify [ID ...]
 python3 ingest.py [--root PATH] finalize ID
 python3 ingest.py [--root PATH] review ID [ID ...]
@@ -31,8 +31,8 @@ discovery work as in `charter.py` (002 R5). The not-in-engagement message names 
 | 2 | Not inside an engagement, or the engagement record is unreadable. |
 | 3 | **Policy refusal**: `extract` or `register-restricted` under `unconfirmed`; `extract` under `restricted` without `--sendable`; `extract` of a file flagged `possible_restricted_copy` without `--sendable`, under any policy; `extract` of a file whose source is restricted. Nothing is opened or written. |
 | 4 | **Duplicate**: `extract` found an identical original. The JSON names `duplicate_of`. Nothing is written. |
-| 5 | **Can't extract**: unsupported format, unreadable file (encrypted, damaged, empty, unknown encoding, or a PDF without a `%PDF-` header), `transcript-format-unknown`, or a `RAW` outside `raw/`. The JSON has `reason`. Nothing is written. |
-| 6 | Bad arguments, an unknown ID, or a state that doesn't allow the command (for example `finalize` on a complete source, `set-status … active` on an in-progress one, or `extract` of a file whose source was rejected while in progress — `reason: "rejected"`, with `source_id`). Nothing is written. |
+| 5 | **Can't extract**: unsupported format, unreadable file (encrypted, damaged, empty, unknown encoding, or a PDF without a `%PDF-` header), `transcript-format-unknown`, `needs-poppler` (a PDF of more than 10 pages without poppler, R4 results), or a `RAW` outside `raw/` (`outside-raw`). The JSON has `reason`. Nothing is written. |
+| 6 | Bad arguments, an unknown ID, a `RAW` that doesn't exist (`error: "not-found"`), or a state that doesn't allow the command (for example `finalize` on a complete source, `set-status … active` on an in-progress one, `extract` of a file that already has a complete source — `reason: "already-ingested"` — or of a file whose source was rejected while in progress — `reason: "rejected"`, with `source_id`). Nothing is written. |
 
 ## Files read and written
 
@@ -124,10 +124,25 @@ For Word, `docx` is
 For transcripts, `transcript` is
 `{"shape": "vtt-voice|vtt-prefix|srt-prefix|name-colon|bold-name|bracket-time|name-time-line|name-paren-time|unlabelled", "turns": n, "timestamps": true, "labels": ["Speaker 1", "Dana"], "generic_labels": ["Speaker 1"]}`.
 
-Policy refusal (exit 3):
+Every `extract` result also has `version_candidates`: IDs of unrestricted sources whose
+`raw_file` matches this file once version suffixes (`v2`, `final`, `draft`, `rev 3`, dates,
+`(1)`, `copy`) are stripped. The script never sets `supersedes` itself (FR-028).
+
+Policy refusals (exit 3):
 
 ~~~json
 {"refused": "policy-unconfirmed", "detail": "Settle model use with charter first. No file was opened."}
+{"refused": "policy-restricted-needs-consent", "detail": "Ask the consultant whether this file may be sent, then pass --sendable. No file was opened."}
+{"refused": "restricted-source", "restricted_source": "S-005", "detail": "This file is registered as restricted. No file was opened."}
+~~~
+
+`restricted-source` applies under every policy, even with `--sendable`.
+
+No poppler and more than 10 pages (exit 5):
+
+~~~json
+{"reason": "needs-poppler", "raw": "long.pdf", "page_count_estimate": 40,
+ "install_hint": "brew install poppler  |  apt install poppler-utils", "detail": "…"}
 ~~~
 
 Possible copy of a restricted file (exit 3, any policy, without `--sendable`):
@@ -142,8 +157,11 @@ Possible copy of a restricted file (exit 3, any policy, without `--sendable`):
 Writes the record with `restricted: true`, `extraction_method: none`, `raw_sha256: ""`,
 `raw_bytes` (from `stat`, without opening the file),
 `extraction_status: complete`, `status: proposed` and `audience: internal`, then adds the
-index row. Returns `{"id": "S-004", "file": "…"}`. The assistant then fills in the
-consultant's details (title, material, date, provider) and runs `verify`.
+index row. Returns `{"id": "S-004", "file": "…", "index_row": "| S-004 | … |"}`. The
+consultant's details (title, material, date, provider) are passed as `--title`,
+`--material`, `--source-date` and `--provided-by`, so the record and its index row are
+right from the start (the index row is only written by the script). The assistant then
+writes the Context line and runs `verify`.
 
 ### `verify`
 
@@ -160,7 +178,10 @@ IDs, `verify` checks every source and the index.
 
 Runs `verify` on the source. If it passes, sets `extraction_status: complete`, sets
 `fidelity: checked` when the word-for-word comparison ran (an unchecked source stays
-`unchecked`), adds the index row and deletes the work folder. Returns `{"id": "S-003", "index_row": "| S-003 | … |"}`.
+`unchecked`), adds the index row and deletes the work folder. Returns `{"id": "S-003", "index_row": "| S-003 | … |", "warnings": […]}`.
+On failure it returns `{"id": …, "problems": […], "warnings": […]}` with exit 1. Besides
+the `verify` codes, it reports `pages-incomplete` and, for a `pending` source whose text
+couldn't be compared (for example poppler has gone), `fidelity-unchecked` as a problem.
 
 ### `review`
 
@@ -197,7 +218,8 @@ line is logged. `rejected`: needs `--reason` and `--trigger`, sets `change_reaso
 Sets `restricted: true` and logs `restrict`. With `--remove-content`, it also replaces the
 content region with the restricted notice, clears the `## Speakers` names and
 `## Uncertain passages`, sets `content_removed: true`, and logs `remove-content` naming
-`--by`. The index row is updated. Returns `{"id": …, "removed": bool, "refs": [...]}`.
+`--by`. The index row is updated. Returns `{"id": …, "removed": bool, "log": […], "refs": {…}}`.
+Only a complete source can be restricted.
 
 ### `refs`
 

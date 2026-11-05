@@ -1,0 +1,16 @@
+name: A PDF without poppler (US1, research R4)
+fixture: fresh
+model_use: allowed
+hide_poppler: true
+raw: [text-table-chart.pdf]
+turns:
+  - "/ingest text-table-chart.pdf — operations review from the COO office, 14 Oct 2026"
+  - "Please finish it and show me the end summary."
+expect:
+  sources:
+    text-table-chart.pdf:
+      fields: {fidelity: unchecked, page_count: 3, extraction_status: complete}
+      matches: ["^### p\\. 1", "^### p\\. 2", "^### p\\. 3", "Order-to-ship time rose in both northern sites during Q3\\."]
+  transcript_contains: ["poppler"]
+  transcript_count:
+    "brew install poppler": [1, 2]

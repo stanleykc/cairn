@@ -1,0 +1,11 @@
+name: An unsupported file (edge case, FR-004)
+fixture: fresh
+model_use: allowed
+raw: [slides.pptx, client-process.md]
+turns:
+  - "/ingest — client-process.md is the client's returns note, October 2026, from the ops team."
+  - "Finish and show the summary."
+expect:
+  sources:
+    slides.pptx: null
+  transcript_contains: ["not supported"]

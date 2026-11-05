@@ -1,9 +1,12 @@
 # Convention: Recording changes to Cairn objects
 
-This document applies to `charter` now, and to `record-change`, `triage` and
-`test-hypothesis` later (FR-030). The skill ships a byte-identical copy at
-`skills/charter/reference/change-convention.md`. Any later skill that changes object
-status ships its own identical copy, and a test enforces that the copies match.
+This document applies to `charter` and `ingest` now, and to `record-change`, `triage` and
+`test-hypothesis` later (FR-030). Each skill ships a byte-identical copy at
+`skills/<skill>/reference/change-convention.md` (today `charter` and `ingest`). Any later
+skill that changes object status ships its own identical copy, and a test enforces that
+the copies match. The source events (`extraction-fix`, `restrict`, `remove-content`) and
+the `<ID> @ <locator>` subject were added on 2026-11-05 for `ingest`; no existing event
+changed meaning.
 
 ## Principle
 
@@ -25,6 +28,18 @@ current state plus the reason for the latest change.
 
 Also logged, without a trigger: `model-use` (the policy was set or changed) and
 `approve-charter`.
+
+### Source events (`ingest`)
+
+| Event | When | Subject | Detail |
+|---|---|---|---|
+| `extraction-fix` | A passage of a source was corrected in review. The passage is replaced in place by a `[!corrected]` callout that keeps the previous text. | `S-004 @ p. 3` | required: the previous text |
+| `restrict` | A source was marked restricted after it was ingested | `S-004` | optional |
+| `remove-content` | A restricted source's content was removed on the consultant's instruction | `S-004` | required: `content removed on instruction of <name>` |
+
+These three take the trigger `-`. `supersede` (`S-002 → S-007`, logged when the new
+version is approved) and `reject` apply to sources unchanged, with a reason and trigger as
+above.
 
 ## Rules
 
@@ -52,11 +67,11 @@ YYYY-MM-DD · <subject> · <event> · <reason> · <trigger>
 | Part | Values |
 |---|---|
 | date | the day the event was applied |
-| subject | `Q-003` · `H-002 → H-004` · `H-003: Q-002 → Q-005` · `scope/Timeline` · `charter` · `model-use` |
-| event | `supersede` · `correct` · `clarify` · `reject` · `relink` · `scope-change` · `model-use` · `approve-charter` |
+| subject | `Q-003` · `H-002 → H-004` · `H-003: Q-002 → Q-005` · `S-004 @ p. 3` (`<ID> @ <locator>`) · `scope/Timeline` · `charter` · `model-use` |
+| event | `supersede` · `correct` · `clarify` · `reject` · `relink` · `scope-change` · `model-use` · `approve-charter` · `extraction-fix` · `restrict` · `remove-content` |
 | reason | one line. For `approve-charter`, write `approved by <name>`. For `model-use`, write `<old> → <new>` and the notes if any. |
-| trigger | `new evidence` · `client feedback` · `rethinking` · `-` (for `model-use` and `approve-charter` only) |
-| detail | required for `clarify` and `scope-change` (the previous text) and for `correct` (what was wrong). Optional otherwise. Every detail line starts with `> `. |
+| trigger | `new evidence` · `client feedback` · `rethinking` · `-` (for `model-use`, `approve-charter`, `extraction-fix`, `restrict` and `remove-content` only) |
+| detail | required for `clarify`, `scope-change` and `extraction-fix` (the previous text), for `correct` (what was wrong) and for `remove-content` (who instructed it). Optional otherwise. Every detail line starts with `> `. |
 
 Separators are ` · ` (space, U+00B7, space). A literal ` · ` inside the reason is written
 as ` - `. Events are appended newest last, and the first event replaces "No changes yet.".
@@ -73,4 +88,9 @@ as ` - `. Events are appended newest last, and the first event replaces "No chan
 > Why is order-to-ship time above target in the north DCs?
 2026-11-03 · model-use · model-use · unconfirmed → restricted (no transcripts) · -
 2026-11-03 · charter · approve-charter · approved by Test Lead · -
+2026-11-07 · S-003 @ p. 3 · extraction-fix · OCR misread WMS · -
+> Figures are taken from the VMS shipment log, excluding returns.
+2026-11-08 · S-005 · restrict · holds HR data after all · -
+2026-11-08 · S-005 · remove-content · client asked for removal · -
+> content removed on instruction of Test Lead
 ~~~

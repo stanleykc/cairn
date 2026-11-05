@@ -51,13 +51,15 @@ status ─┬─ exit 2 ──────────────────�
      • possible_restricted_copy → name the restricted S-###; ask "may it be sent?"
                             under any policy; no → register-restricted; yes → --sendable
      • unsupported        → list as "not supported yet", skip                         (FR-004)
-     • PDF, no poppler    → carry on in unchecked mode; mention the install hint once
+     • PDF, no poppler    → carry on in unchecked mode (PDFs of up to 10 pages; longer
+                            ones are skipped with needs-poppler); mention the install hint once
             ▼
    model_use == restricted ─▶ show model_use_notes; ask per file "may it be sent?"    (FR-006)
    any policy             ─▶ consultant may mark any file restricted
             ▼
    for each restricted file:  ask title / material / date / provider →
-                              register-restricted → edit details → verify             (FR-007)
+                              register-restricted --title … --material … →
+                              write Context → verify                                  (FR-007)
             ▼
    ask one line of context per remaining file (who, when, why, trust) — or use the
    context given in the arguments                                                     (US1-5, US1-6)

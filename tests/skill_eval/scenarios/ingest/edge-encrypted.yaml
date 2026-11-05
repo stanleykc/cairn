@@ -1,0 +1,9 @@
+name: An encrypted PDF (edge case)
+fixture: fresh
+model_use: allowed
+raw: [encrypted.pdf]
+turns:
+  - "/ingest encrypted.pdf — the locked report from finance, October 2026."
+expect:
+  source_count: 0
+  transcript_contains: ["encrypt"]

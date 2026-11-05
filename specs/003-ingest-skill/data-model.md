@@ -235,3 +235,10 @@ Approving a source (`active`) isn't logged, just as approving a charter item isn
 | `index-mismatch` · `index-missing` | §4 |
 | `restricted-has-content` | Warning: `restricted: true` and the content is still there (restricted after ingest, content not removed). Later skills must not read it. |
 | `broken-link` | `supersedes` names a source that doesn't exist |
+| `fix-unlogged` | Warning: a `[!corrected]` callout has no matching `extraction-fix` line for that source in the changelog |
+| `unparseable` | The front matter can't be read (no closing `---`, a bad line) |
+
+`missing-field` also covers `title`. Under `model_use: unconfirmed`, `verify` doesn't open
+originals: it warns `fidelity-unchecked` ("comparison skipped") instead of comparing.
+`finalize` additionally reports `pages-incomplete` and, for a `pending` source whose text
+couldn't be compared, `fidelity-unchecked` as a problem.

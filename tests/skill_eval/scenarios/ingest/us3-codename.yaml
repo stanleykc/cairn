@@ -1,0 +1,10 @@
+name: Code name in titles and index rows (US3, FR-024)
+fixture: fresh
+model_use: allowed
+raw: [client-process.md, kickoff.vtt]
+turns:
+  - "/ingest — client-process.md is Acme's returns note from their ops team, October 2026. kickoff.vtt is our kickoff call with Acme on 20 Oct 2026."
+  - "Finish both and show the summary."
+expect:
+  index_matches: ["Northwind"]
+  index_not_contains: [Acme]
