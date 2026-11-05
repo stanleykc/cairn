@@ -29,10 +29,10 @@ discovery work as in `charter.py` (002 R5). The not-in-engagement message names 
 | 0 | Success. For `verify`, no problems (warnings may be present). |
 | 1 | `verify` or `finalize` found problems. The JSON is still printed. `finalize` writes nothing. |
 | 2 | Not inside an engagement, or the engagement record is unreadable. |
-| 3 | **Policy refusal**: `extract` under `unconfirmed`, or under `restricted` without `--sendable`. Nothing is opened or written. |
+| 3 | **Policy refusal**: `extract` or `register-restricted` under `unconfirmed`; `extract` under `restricted` without `--sendable`; `extract` of a file flagged `possible_restricted_copy` without `--sendable`, under any policy; `extract` of a file whose source is restricted. Nothing is opened or written. |
 | 4 | **Duplicate**: `extract` found an identical original. The JSON names `duplicate_of`. Nothing is written. |
 | 5 | **Can't extract**: unsupported format, unreadable file (encrypted, damaged, empty, unknown encoding, or a PDF without a `%PDF-` header), `transcript-format-unknown`, or a `RAW` outside `raw/`. The JSON has `reason`. Nothing is written. |
-| 6 | Bad arguments, an unknown ID, or a state that doesn't allow the command (for example `finalize` on a complete source, or `set-status` on an in-progress one). Nothing is written. |
+| 6 | Bad arguments, an unknown ID, or a state that doesn't allow the command (for example `finalize` on a complete source, `set-status … active` on an in-progress one, or `extract` of a file whose source was rejected while in progress — `reason: "rejected"`, with `source_id`). Nothing is written. |
 
 ## Files read and written
 
@@ -74,7 +74,9 @@ JSON on stdout, UTF-8, one object. Keys are stable within a framework minor vers
                   "install_hint": "brew install poppler  |  apt install poppler-utils"},
   "raw_files": [
     {"raw": "ops/ops-review-fy25.pdf", "format": "pdf", "bytes": 482113,
-     "state": "new", "source_id": null},
+     "state": "new", "source_id": null, "possible_restricted_copy": null},
+    {"raw": "hr/attrition-v2.pdf", "format": "pdf", "bytes": 88120,
+     "state": "new", "source_id": null, "possible_restricted_copy": "S-005"},
     {"raw": "kickoff.vtt", "format": "vtt", "bytes": 20411, "state": "ingested", "source_id": "S-002"},
     {"raw": "slides.pptx", "format": "pptx", "bytes": 1203321, "state": "unsupported", "source_id": null}
   ],
@@ -128,9 +130,17 @@ Policy refusal (exit 3):
 {"refused": "policy-unconfirmed", "detail": "Settle model use with charter first. No file was opened."}
 ~~~
 
+Possible copy of a restricted file (exit 3, any policy, without `--sendable`):
+
+~~~json
+{"refused": "possible-restricted-copy", "restricted_source": "S-005",
+ "detail": "This file may be a copy of a restricted file. Ask the consultant whether it may be sent, then pass --sendable. No file was opened."}
+~~~
+
 ### `register-restricted`
 
 Writes the record with `restricted: true`, `extraction_method: none`, `raw_sha256: ""`,
+`raw_bytes` (from `stat`, without opening the file),
 `extraction_status: complete`, `status: proposed` and `audience: internal`, then adds the
 index row. Returns `{"id": "S-004", "file": "…"}`. The assistant then fills in the
 consultant's details (title, material, date, provider) and runs `verify`.

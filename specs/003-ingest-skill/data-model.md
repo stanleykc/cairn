@@ -12,7 +12,7 @@ changes in §1. Every rule here is checked by `ingest.py verify`
 
 | Change | Files | Why |
 |---|---|---|
-| Source template: new fields `material`, `raw_sha256`, `meeting_title`, `meeting_date`, `attendees`, `author`, `author_kind`, `extraction_status`, `fidelity`, `page_count`, `pages_reviewed`, `content_removed`. `source_type` values become file formats. `extraction_method` gains `none`. New body sections (§3.3). | `assets/templates/source.md` | FR-018, FR-023, the resume, duplicate and restricted edge cases (R8) |
+| Source template: new fields `material`, `raw_sha256`, `raw_bytes`, `meeting_title`, `meeting_date`, `attendees`, `author`, `author_kind`, `extraction_status`, `fidelity`, `page_count`, `pages_reviewed`, `content_removed`. `source_type` values become file formats. `extraction_method` gains `none`. New body sections (§3.3). | `assets/templates/source.md` | FR-018, FR-023, the resume, duplicate and restricted edge cases (R8) |
 | Change convention: new events `extraction-fix`, `restrict` and `remove-content`. Subject form `<ID> @ <locator>`. Trigger `-` allowed for those three events. | `assets/skills/charter/reference/change-convention.md`, new identical copy in `assets/skills/ingest/reference/`, `specs/002-charter-skill/contracts/change-convention.md`, `assets/seed/60-log/changelog.md` guidance | FR-031, restriction after ingest (R14) |
 | Framework version `0.2.0` → `0.3.0` | `src/cairn/__init__.py` | Refresh delivers the skill and the template (R20) |
 | 001 docs updated for the source fields | `specs/001-engagement-init/data-model.md` (source row) | The constitution requires the data model docs to move with the templates |
@@ -30,7 +30,9 @@ A file as received, in `10-sources/raw/` or a subfolder of it.
 | path | relative to `10-sources/raw/` | Stored in the source's `raw_file` |
 | format | file extension, case-insensitive | `.pdf` `.docx` `.md` `.markdown` `.txt` `.vtt` `.srt` are supported. Anything else is `unsupported` (FR-004). |
 | hash | SHA-256 of the bytes | Taken only by `extract`, so a restricted file is never hashed (R6) |
-| state (derived by `status`) | matching `raw_file` of existing sources | `new` · `in-progress` (S-ID) · `ingested` (S-ID) · `restricted` (S-ID) · `unsupported` |
+| size | bytes, from `stat` | Read without opening the file. Recorded as `raw_bytes` for every source, including restricted records. |
+| state (derived by `status`) | matching `raw_file` of existing sources | `new` · `in-progress` (S-ID) · `ingested` (S-ID) · `restricted` (S-ID) · `rejected` (S-ID, rejected while in progress) · `unsupported` |
+| `possible_restricted_copy` (derived by `status`) | a `new` file whose size equals a restricted source's `raw_bytes`, or whose name stem equals one once version suffixes are stripped (R15) | The restricted S-ID, or `null` |
 
 **Invariant**: No command writes, renames, moves or deletes anything under `raw/` (FR-026).
 The only write the skill makes there is a copy into `raw/`, made at the consultant's
@@ -38,6 +40,15 @@ request with the assistant's file tools *(assistant)*.
 
 Duplicates by content (FR-027) are found by `extract`, which compares the hash with every
 source's `raw_sha256` before writing.
+
+A restricted record has no hash, so a copy of a restricted file can't be found by content.
+Instead, `status` flags a new file as `possible_restricted_copy` by size or name, and
+`extract` treats it as restricted: it requires `--sendable` under **every** policy, which the
+skill passes only after the consultant confirms that the file may be sent (R6).
+
+A file whose source was rejected while in progress (for example an unreadable PDF) has state
+`rejected`. `extract` refuses it (exit 6), so later runs don't try it again. Retrying a
+rejected file is out of scope for this version.
 
 ## 3. Source (`S-###`)
 
@@ -56,6 +67,7 @@ are unchanged from 001/002. Source fields follow:
 | `source_type` | `pdf` · `docx` · `markdown` · `text` · `vtt` · `srt` · `deck` · `spreadsheet` · `image` · `web` · `other` | script | File format. The last five are reserved for later versions. |
 | `raw_file` | path relative to `10-sources/raw/` | script | Required, unique across sources |
 | `raw_sha256` | 64 hex characters, or `""` for a restricted record | script | Unique across sources |
+| `raw_bytes` | integer, the original's size from `stat` | script (`extract` and `register-restricted`) | Required. Used to flag possible copies of restricted files. |
 | `provided_by` | text | assistant | Required, unless the consultant doesn't know (then `"not stated"`) |
 | `source_date` | `YYYY-MM-DD`, `YYYY-MM`, `YYYY` or `""` | assistant | The document's date, or the meeting date |
 | `meeting_title` | text | assistant | Meetings only. Shared by a transcript and a summary of the same meeting. |
@@ -79,7 +91,7 @@ Standard field rules for sources:
 |---|---|
 | `status` | `proposed` when written (FR-022). Changes only through `set-status`. |
 | `audience` | Always `internal`. `verify` reports `client-ready` as a problem. |
-| `origin` | `client-document`, `interview-meeting` or `consultant-note` (FR-019). The script suggests one from `material`. The consultant may override it. |
+| `origin` | Suggested from `material` (§3.2): `client-document`, `interview-meeting` or `consultant-note`. The consultant may override it with `external-research` or `prior-engagement` (FR-019). Never `llm-inference`. |
 | `confidence` | `high` · `medium` · `low`. Defaults to `medium`, with the reason "trust not stated by the consultant" (FR-020). Never `high` when `author_kind: ai-notetaker`. |
 | `confidence_reason` | One line, required |
 | `title` | Uses the client code name when one is set (FR-024) |
@@ -137,7 +149,8 @@ holds one line: `Restricted: not extracted. Do not open the original with an AI 
 
 - Only `finalize` sets `complete`, and only `finalize` adds the index row.
 - An in-progress source can be rejected (for example, a PDF that Read can't open). It
-  gets no index row, and its ID isn't reused.
+  gets no index row, and its ID isn't reused. Its original then has state `rejected`, and
+  `extract` refuses it (exit 6).
 - `active`, `rejected` and `superseded` happen only through `set-status`, run after the
   consultant's explicit instruction *(assistant)* (FR-030, SC-008).
 - Nothing ever sets `audience: client-ready` (FR-022).

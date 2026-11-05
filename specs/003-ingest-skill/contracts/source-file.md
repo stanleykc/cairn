@@ -47,6 +47,7 @@ material: document
 source_type: pdf
 raw_file: "ops/ops-review-fy25.pdf"
 raw_sha256: "9f2c…"
+raw_bytes: 482113
 provided_by: "COO office"
 source_date: "2026-10-14"
 meeting_title: ""

@@ -210,6 +210,11 @@ and updates its index row, and nothing else changes.
   file it was pointed to.
 - A file in `10-sources/raw/` has an identical copy that was already ingested: the skill
   names the existing `S-###` and doesn't create a second one.
+- A new file may be a copy of a file registered as restricted (same size, or the same name
+  once version suffixes are removed). Restricted files are never opened, so their content
+  can't be compared. The skill treats the new file as possibly restricted: it names the
+  restricted `S-###` and asks the consultant whether the new file may be sent, under any
+  policy, before opening it.
 - A new version of an already-ingested document arrives: it becomes a new source. The
   skill asks whether it replaces the earlier one and, if so, links it with `supersedes`. The
   earlier source and its observations are kept.
@@ -229,6 +234,9 @@ and updates its index row, and nothing else changes.
   it differs.
 - A long document is interrupted partway: the source isn't added to the index or shown
   as complete until extraction finishes. The next run resumes or restarts it.
+- A file can't be read after extraction has started (for example, a PDF the assistant
+  can't open): its in-progress source is rejected with the reason, keeps its ID, gets no
+  index row, and later runs list the file as rejected instead of trying it again.
 - An original is renamed or removed from `10-sources/raw/` after ingest: the skill reports
   that the original is missing, and keeps the source record.
 - A meeting summary was produced by an AI note-taker rather than a person: the skill
@@ -314,7 +322,9 @@ and updates its index row, and nothing else changes.
   whether a person or an AI note-taker wrote it.
 - **FR-019**: Origin MUST be `client-document` for client documents, `interview-meeting` for
   meeting transcripts and summaries written by others, and `consultant-note` for the
-  consultant's own notes. The consultant MAY override the suggested origin.
+  consultant's own notes. The consultant MAY override the suggested origin with any other
+  origin except `llm-inference` (for example `prior-engagement` or `external-research`),
+  because a source is material that was read, not inferred.
 - **FR-020**: Confidence MUST reflect how far the consultant trusts the source, with a
   one-line reason. When the consultant doesn't say, it MUST be `medium` with a reason saying
   trust was not stated. AI-generated summaries MUST NOT be rated above `medium`.

@@ -47,6 +47,9 @@ status ─┬─ exit 2 ──────────────────�
             ▼
    pick files: named (status RAW…) or all with state new / in-progress                (FR-003)
      • outside raw/       → offer to copy into raw/ (never move); then continue
+     • rejected           → list under Skipped ("rejected: <reason>, S-###"), don't retry
+     • possible_restricted_copy → name the restricted S-###; ask "may it be sent?"
+                            under any policy; no → register-restricted; yes → --sendable
      • unsupported        → list as "not supported yet", skip                         (FR-004)
      • PDF, no poppler    → carry on in unchecked mode; mention the install hint once
             ▼
@@ -138,6 +141,7 @@ Registered as restricted (not opened):
 Skipped:
   slides.pptx — not supported yet
   ops-review-fy25-copy.pdf — identical to S-003
+  scan-2019.pdf — rejected while extracting: unreadable (S-008)
 In progress (resume with /ingest):
   S-006  Process manual · pages 1–20 of 64 reviewed
 To spot-check:

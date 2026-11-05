@@ -91,7 +91,8 @@ R2, …). "002 R7" means decision R7 of the charter feature.
     poppler-utils`) is shown once per session, as a suggestion, never as a blocker.
   - If Read can't open a PDF that passed the header check, the in-progress source is
     rejected with reason "unreadable" (`set-status … rejected` is allowed on in-progress
-    sources). It gets no index row, and its ID isn't reused.
+    sources). It gets no index row, and its ID isn't reused. `status` then shows the
+    original as `rejected`, and `extract` refuses it (exit 6), so later runs skip it.
 - **Vision (both modes)**: The assistant views every page with the Read tool (`pages`, at
   most 20 per request). It rebuilds tables, OCRs pages without text and describes images
   there. Pages are processed in order, and `pages_reviewed` records progress, so a long
@@ -158,8 +159,15 @@ R2, …). "002 R7" means decision R7 of the charter feature.
   2. **The script gates extraction.** `extract` exits with code 3 under `unconfirmed`. Under
      `restricted` it requires `--sendable`, which the skill passes only after the
      consultant's yes for that file. `register-restricted` never opens the file: it records
-     only the path and the details the consultant gave. No hash is taken, so "never opened"
-     holds literally.
+     only the path, its size from `stat` (`raw_bytes`) and the details the consultant gave.
+     No hash is taken, so "never opened" holds literally.
+     Because there is no hash, a renamed copy of a restricted file can't be found by
+     content. `status` therefore flags a new file as `possible_restricted_copy` when its
+     size equals a restricted record's `raw_bytes`, or its name stem matches one once
+     version suffixes are stripped (R15). `extract` refuses such a file without
+     `--sendable` under every policy (exit 3, `possible-restricted-copy`), and the skill
+     asks the consultant first. A size match can be a false positive. The cost is one
+     extra question, which is the safe direction.
   3. **The script's output is metadata only.** `status`, `extract` and `review` print
      counts, locators, labels and paths, never extracted text. The assistant sees content
      only by reading the `S-###` file after `extract`, which happens only for sendable
