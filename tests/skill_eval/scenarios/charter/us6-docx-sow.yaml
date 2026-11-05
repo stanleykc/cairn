@@ -1,0 +1,14 @@
+name: A .docx SOW is read through `doc`, never with Read (004 US1, R2)
+fixture: fresh
+model_use: allowed
+documents: [sow-synthetic.docx]
+documents_allowed: []
+turns:
+  - "/charter Draft from the SOW at 10-sources/raw/sow-synthetic.docx"
+  - "Objectives: confirm as drafted. Then stop and show me the end summary."
+expect:
+  doc_calls: [1, 3]
+  never_read: [sow-synthetic.docx]
+  files_contain:
+    00-charter/scope.md: ["30%", "north DCs"]
+  transcript_contains: ["From documents: sow-synthetic.docx"]

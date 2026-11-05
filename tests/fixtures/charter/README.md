@@ -12,6 +12,7 @@ Synthetic engagements used by the `charter.py` unit tests, the golden tests
 | `revised/` | `approved/` after a revision: a new question, a superseded hypothesis, a rejected assumption, a pending revision and a changed timeline |
 | `broken/` | `drafted/` with deliberate defects; `check` must report the expected problem codes |
 | `codename/` | An engagement that uses the code name "Northwind" for the client "Globex" |
+| `documents/` | Synthetic engagement documents (feature 004): a SOW as `.md`, `.pdf` and `.docx`, a SOW naming "Globex" (`.md`, `.docx`), a change order against `approved/`, a scanned PDF, an encrypted PDF and a legacy `.doc`. Regenerate with `python3 tests/fixtures/charter/documents/make_documents.py` |
 
 Rules:
 
@@ -21,5 +22,7 @@ Rules:
   `charter.py` (or edit files) against the copy.
 - **`10-sources/` canaries are created at test time**, never committed. Tests that check
   the script never opens `10-sources/` create an unreadable canary file there in the copy.
+- **Documents are copied into a test copy's `10-sources/raw/` at test time**, never
+  committed under a fixture's `10-sources/`.
 - Empty canonical folders are not committed (git cannot hold them). Tests that need them
   create them in the copy.

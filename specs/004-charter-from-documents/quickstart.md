@@ -48,8 +48,12 @@ cd demo-eng && claude
 ## 3. Live evals (opt-in)
 
 ```bash
-CAIRN_SKILL_EVAL=1 python3 -m pytest tests/skill_eval -k charter
+CAIRN_SKILL_EVAL=1 python3 -m pytest tests/skill_eval -k charter -v
 ```
+
+This makes 59 live model turns across 23 scenarios and takes tens of minutes. Each turn
+prints a `turn n/m` line as it starts, so a quiet stretch means a turn is still running, not
+a hang. Add `CAIRN_SKILL_EVAL_OUT=<folder>` to keep each scenario's transcript.
 
 Expected: the new and updated scenarios pass (research R10). The canary text is read only
 in scenarios that list the document under `documents_allowed`, and is never read under

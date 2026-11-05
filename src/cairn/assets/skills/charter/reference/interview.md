@@ -10,11 +10,46 @@ still missing from a `draft` charter. Formats for everything written are in
    their first message), sort it into the topics below before asking anything. For each
    topic it covers, show back what you captured ("I have the objective as: … and the final
    readout as 2026-12-04. Is that right?") and ask them to confirm or correct it. Never ask
-   them to restate it.
+   them to restate it. A document they named or pasted counts too, once
+   `reference/documents.md` cleared it: see "Drafting from a document" below.
 2. **Earlier answers.** The same applies all through the session: when an earlier answer
    already covers a topic, show it back for confirmation instead of asking again.
 3. **Minimum for a draft.** Objectives and at least one key question. Every other topic
    may be skipped. Keep a list of skipped topics for the end summary.
+
+## Drafting from a document
+
+Use this after a document was cleared and read (`reference/documents.md`).
+
+1. **Say what it covers.** List the topics found and not found, using the topic names in
+   the table below: "The SOW covers Objectives, Boundaries, Deliverables, Timeline and
+   Stakeholders. It doesn't cover Constraints, Key questions, Hunches, Assumptions or
+   Lenses; I'll ask about those as usual." If it covers none, say so and run the usual
+   interview (G12 in `reference/documents.md`).
+2. **One covered topic at a time, in the usual order.** Show the drafted answer, in the
+   document's wording where practical, and ask **"Confirm, correct or skip?"**.
+   - Confirm: save it as drafted. Correct: save the consultant's version. Skip: write
+     nothing for that topic and list it under `Not covered`.
+   - Save each topic as soon as it is confirmed or corrected, as for any answer.
+3. **Topics it doesn't cover** get the usual prompt from the table.
+4. **Hunches stated as facts.** A sentence that reads as fact but is really a belief ("Carrier
+   pickup delays are the main cause of late shipments") is offered as a candidate
+   hypothesis (with a question) or assumption, never written as a fact or into scope.
+5. **Quote sparingly.** Never quote more of the document than the drafted answer needs.
+6. **Conflicts.** If documents disagree, or the consultant contradicts a document, show
+   both versions once and ask which to keep. The consultant's answer wins (G13).
+7. **Code name.** If the document names the real client while a code name is in use, say
+   once that you'll write `client_label` instead (G14), and never write the real name.
+8. **Status.** Everything written stays `proposed` and `audience: internal`. Q, H and A
+   entries keep `origin: consultant-note`; their `confidence_reason` names the document
+   (`reference/formats.md`).
+9. **Problems while reading.** If no text could be read (G7), or only part of the document
+   was read (G8), tell the consultant what to do instead (`reference/documents.md`) and
+   carry on with the usual prompts for what is missing. If pasted text came with no
+   description, ask what it is first (G11).
+
+Drafting cuts the number of prompts, not the confirmations: every topic drawn from a
+document is still confirmed by the consultant before it is written.
 
 ## Topic order
 

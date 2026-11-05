@@ -171,6 +171,36 @@ Constraints are part of scope: changing them is a scope change too (subject
 `scope/Constraints`). Filling a section that still held seed guidance is not a scope
 change and is not logged.
 
+### Revising from a document
+
+When the consultant names a document in revision mode (a change order, a revised SOW),
+first clear and read it as in `reference/documents.md`. Then:
+
+1. Compare it with the `status` output and the charter files. List **only the
+   differences**: what the document adds, moves or contradicts. Never re-propose what the
+   charter already says.
+2. If there are no differences, say "No changes found in <document>" and write nothing
+   (G15).
+3. Propose each difference **one at a time**, under `reference/change-convention.md`: a
+   new item, a new version, a clarify, a reject or a scope change, as the difference
+   requires. Nothing is written until the consultant confirms it.
+4. Each needs a reason and a trigger, as always. The reason comes from the consultant, or
+   from the document's own stated reason once the consultant confirms it. The trigger is
+   still one of `new evidence`, `client feedback` or `rethinking` (ask; a change order from
+   the client is usually `client feedback`). Name the document in the reason:
+   `<reason> (new document: <document name>)`, for example
+
+   ```text
+   2026-11-12 · scope/Timeline · scope-change · offsite moved (new document: change-order-1.md) · client feedback
+   > - 2026-12-04: Final readout.
+   ```
+
+5. If the document conflicts with the charter and the consultant disagrees with the
+   document, the consultant's answer wins (G13).
+6. After the changes, append the `drew … from <document name> (consultant confirmed)` line
+   (`reference/formats.md`) only for topics added from the document, not for changes
+   already logged above.
+
 ### Objects that link to a changed item
 
 After a supersede (at approval) or a reject, run `charter.py refs <ID>` for each changed

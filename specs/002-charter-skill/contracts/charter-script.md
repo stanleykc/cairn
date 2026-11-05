@@ -1,13 +1,15 @@
 # Contract: `charter.py` helper script
 
 `<engagement>/.claude/skills/charter/scripts/charter.py`. Python 3.9+, standard library
-only, no network access (research R3). It reads and writes plain files only.
+only, no network access (research R3). It reads and writes plain files only. Script
+version 0.3.0 (feature 004 added `doc`).
 
 ~~~text
 python3 charter.py [--root PATH] status
 python3 charter.py [--root PATH] check
 python3 charter.py [--root PATH] refs ID [ID ...]
 python3 charter.py [--root PATH] model-use --set {allowed,restricted,unconfirmed} [--notes TEXT]
+python3 charter.py [--root PATH] doc RAW [--permitted]
 python3 charter.py --version
 ~~~
 
@@ -22,6 +24,7 @@ the current directory, then tries the script's own engagement (R5).
 | 1 | `check` found problems. The JSON is still printed. |
 | 2 | Not inside an engagement, or the engagement record is unreadable. The message goes to stderr. |
 | 3 | Bad arguments (argparse), or `model-use` couldn't find a line or section to rewrite. Nothing is written. |
+| 4 | `doc` only: the named document may not be read. The JSON (`refused`, `detail`, `next_step`) is still printed. See `specs/004-charter-from-documents/contracts/charter-doc-command.md`. |
 
 ## Files read and written
 
@@ -30,8 +33,11 @@ the current directory, then tries the script's own engagement (R5).
 | `status`, `check` | `engagement.md`, `00-charter/*.md`, `60-log/changelog.md`; for ID numbering, every `*.md` under the content folders except `10-sources/` and `_templates/` | nothing |
 | `refs` | same set as above | nothing |
 | `model-use` | `engagement.md`, `00-charter/scope.md` | the same two files, each rewritten atomically (temp file + `os.replace`). Only the `model_use` and `model_use_notes` lines, and the Model use section lines `Current policy:` and `Restrictions:`, are changed. The script then appends one `model-use` event to the changelog. |
+| `doc` | `engagement.md`; the named file in `10-sources/raw/` (`.docx` only, and only after every check passes); the `restricted` and `raw_file` front matter of `10-sources/extracted/S-*.md` | nothing |
 
-Never read: anything under `10-sources/`. Never written: anything outside the files in the
+Never read under `10-sources/`: anything except, for `doc` only, the named raw `.docx` and
+the `restricted`/`raw_file` front matter of `10-sources/extracted/S-*.md` (research R3 in
+004). `status`, `check`, `refs` and `model-use` never open anything under `10-sources/`. Never written: anything outside the files in the
 table.
 
 ## Output
@@ -111,3 +117,9 @@ If the value and the notes are already as given, nothing is written and `changed
 `[]`. A missing `model_use_notes:` line in either file is added directly after
 `model_use:`, and a missing `Restrictions:` line is added after `Current policy:`.
 Comments after the value (`# allowed | restricted | unconfirmed`) are kept.
+
+### `doc RAW [--permitted]`
+
+Whether a named document may be read, and for `.docx` its text. The checks, the output
+and every refusal code with its `detail` and `next_step` text are in
+`specs/004-charter-from-documents/contracts/charter-doc-command.md`.

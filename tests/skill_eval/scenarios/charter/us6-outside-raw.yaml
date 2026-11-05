@@ -1,0 +1,13 @@
+name: A document outside 10-sources/raw/ is refused with the copy instruction (004 G2)
+fixture: fresh
+model_use: allowed
+outside_files:
+  Downloads/sow.pdf: "Reference CANARY-OUTSIDE-51c2. Statement of work.\n"
+turns:
+  - "/charter Use the SOW at {{work}}/Downloads/sow.pdf"
+  - "OK, I'll copy it later. The objective is to cut order-to-ship time by 30% in the north DCs. Stop here and show me the end summary."
+expect:
+  never_read: [Downloads/sow.pdf]
+  transcript_contains: ["10-sources/raw", "cp "]
+  transcript_not_contains: ["CANARY-OUTSIDE"]
+  changed_files_not_contain: ["CANARY-OUTSIDE"]

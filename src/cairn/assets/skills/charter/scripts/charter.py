@@ -5,11 +5,14 @@
     python3 charter.py [--root PATH] check
     python3 charter.py [--root PATH] refs ID [ID ...]
     python3 charter.py [--root PATH] model-use --set {allowed,restricted,unconfirmed} [--notes TEXT]
+    python3 charter.py [--root PATH] doc RAW [--permitted]
 
-Contract: specs/002-charter-skill/contracts/charter-script.md. Python 3.9+, standard library
-only, no network. It never opens anything under `10-sources/`, never prints the text of
-objects outside `00-charter/`, and never prints the real client name when a code name is
-in use. It does not import `cairn`: each engagement runs the copy pinned to its own
+Contracts: specs/002-charter-skill/contracts/charter-script.md and
+specs/004-charter-from-documents/contracts/charter-doc-command.md. Python 3.9+, standard
+library only, no network. Under `10-sources/` it opens only, for `doc`, the named raw
+`.docx` and the `restricted`/`raw_file` front matter of `10-sources/extracted/S-*.md`. It
+never prints the text of objects outside `00-charter/` (except the `.docx` text `doc`
+returns), and never prints the real client name when a code name is in use. It does not import `cairn`: each engagement runs the copy pinned to its own
 framework version.
 """
 
@@ -21,12 +24,14 @@ import os
 import re
 import sys
 import tempfile
+import xml.etree.ElementTree as ET
+import zipfile
 from datetime import date
 from pathlib import Path
 
-SCRIPT_VERSION = "0.2.0"
+SCRIPT_VERSION = "0.3.0"
 
-EXIT_OK, EXIT_PROBLEMS, EXIT_NO_ENGAGEMENT, EXIT_USAGE = 0, 1, 2, 3
+EXIT_OK, EXIT_PROBLEMS, EXIT_NO_ENGAGEMENT, EXIT_USAGE, EXIT_REFUSED = 0, 1, 2, 3, 4
 
 NOT_IN_ENGAGEMENT = (
     "Not inside a Cairn engagement. Create one with `cairn init`, then run `charter` "
@@ -944,6 +949,215 @@ def atomic_write(path: Path, text: str) -> None:
         raise
 
 
+# --- doc: may a named document be read? (004 contracts/charter-doc-command.md) ------
+
+RAW_DIR = "10-sources/raw"
+EXTRACTED_DIR = "10-sources/extracted"
+DOC_FORMATS = {".pdf": "pdf", ".docx": "docx", ".md": "md", ".markdown": "md", ".txt": "txt"}
+DOCX_CAP = 200_000
+
+# Why (detail) and what to do instead (next_step), per refusal code. `{path}` is the path
+# as given, `{name}` the name relative to 10-sources/raw/, `{ext}`, `{notes}`, `{source}`.
+DOC_NEXT_STEPS = {
+    "policy-unconfirmed": (
+        "The model-use policy is unconfirmed, so no client document may be sent to the model "
+        "yet. Nothing was opened.",
+        "Settle the model-use policy now: allowed, restricted (say what can't be sent), or "
+        "still unconfirmed. If you can't settle it yet, carry on with the plain interview and "
+        "summarize the document in your own words.",
+    ),
+    "outside-raw": (
+        "{path} is not inside this engagement's 10-sources/raw/. charter only reads documents "
+        "kept there. Nothing was opened.",
+        'Copy it into the engagement: from the engagement folder, run cp "{path}" '
+        "10-sources/raw/ (originals there are never changed), then name it again. Or paste the "
+        "relevant sections, if the model-use policy permits it.",
+    ),
+    "not-found": (
+        "No file named {name} was found in 10-sources/raw/.",
+        "Check the file name, including its extension, and that the file was copied into "
+        "10-sources/raw/. charter does not list that folder, so it needs the exact name.",
+    ),
+    "unsupported-format": (
+        "{name} is a {ext} file. charter reads only PDF, .docx, .md and .txt. Nothing was "
+        "opened.",
+        "Save or export it as one of PDF, .docx, .md, .txt, copy that into 10-sources/raw/ "
+        "and name it again. Or paste the relevant text.",
+    ),
+    "restricted-source": (
+        "ingest registered {name} as restricted ({source}), so it may not be sent to the "
+        "model. Nothing was opened.",
+        "Summarize the relevant points in your own words instead. If the restriction was "
+        "recorded by mistake, correct it through ingest, not charter.",
+    ),
+    "needs-permission": (
+        "The model-use policy is restricted ({notes}). Ask the consultant whether this "
+        "document may be used under these restrictions, then rerun with --permitted.",
+        "Say whether {name} may be used under these restrictions. If yes, it will be read. "
+        "If no, summarize the relevant points in your own words, leaving out what the "
+        "restrictions cover.",
+    ),
+    "unreadable": (
+        "{name} could not be read as a Word document, or it holds no text (it may be "
+        "damaged, password-protected or not really a .docx).",
+        "Save an unlocked or text copy (export to .docx or .txt) into 10-sources/raw/ and "
+        "name it again. Or paste the relevant sections.",
+    ),
+}
+DOC_TRUNCATED_NEXT_STEP = (
+    "Only the first 200,000 characters were returned. If a topic you need is not in them, "
+    "paste the sections that cover it, or put a shorter extract in 10-sources/raw/ and name "
+    "it again."
+)
+
+
+def _refuse(code: str, document: str, model_use: str, **extra) -> tuple:
+    detail, next_step = DOC_NEXT_STEPS[code]
+    values = {"path": extra.pop("_path", document), "name": document, "ext": extra.pop("_ext", ""),
+              "notes": extra.get("model_use_notes") or "no restrictions recorded",
+              "source": extra.get("restricted_source", "")}
+    out = {"refused": code, "document": document, "model_use": model_use, **extra,
+           "detail": detail.format(**values), "next_step": next_step.format(**values)}
+    return EXIT_REFUSED, out
+
+
+def resolve_document(eng: Engagement, arg: str) -> tuple:
+    """(candidate path, raw folder resolved). Relative names are tried against raw/, then the
+    engagement root and the current folder; the first that exists wins, else raw/<arg>."""
+    raw = eng.root / RAW_DIR
+    given = Path(os.path.expanduser(arg))
+    if given.is_absolute():
+        return given, raw.resolve()
+    candidates = [raw / given, eng.root / given, Path(os.getcwd()) / given]
+    for cand in candidates:
+        if os.path.lexists(str(cand)):
+            return cand, raw.resolve()
+    return candidates[0], raw.resolve()
+
+
+def read_front_matter_only(path: Path) -> dict:
+    """The front matter of a markdown file, reading no further than its closing `---`."""
+    lines = []
+    try:
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            if fh.readline().strip() != "---":
+                return {}
+            for _ in range(200):
+                line = fh.readline()
+                if not line or line.strip() == "---":
+                    break
+                lines.append(line.rstrip("\n"))
+    except OSError:
+        return {}
+    fields, _ = parse_mapping(lines, 2)
+    return fields
+
+
+def restricted_registration(eng: Engagement, rel: str):
+    """The S-ID of a restricted ingest source of `rel`, if any (front matter only, R3)."""
+    folder = eng.root / EXTRACTED_DIR
+    if not folder.is_dir():
+        return None
+    for path in sorted(folder.glob("S-*.md")):
+        fields = read_front_matter_only(path)
+        if _str(fields.get("restricted")).strip().lower() != "true":
+            continue
+        raw_file = _str(fields.get("raw_file")).strip()
+        if raw_file and Path(os.path.normpath(raw_file)).as_posix() == rel:
+            return _str(fields.get("id")).strip() or path.stem
+    return None
+
+
+W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+
+
+def _para_text(p) -> str:
+    parts = []
+    for node in p.iter():
+        if node.tag == W + "t" and node.text:
+            parts.append(node.text)
+        elif node.tag == W + "tab":
+            parts.append("\t")
+        elif node.tag in (W + "br", W + "cr"):
+            parts.append(" ")
+    return " ".join("".join(parts).split())
+
+
+def _heading_level(p) -> int:
+    style = p.find(f"{W}pPr/{W}pStyle")
+    value = (style.get(W + "val") or "") if style is not None else ""
+    match = re.match(r"^(?:Heading|heading)\s*(\d)$", value)
+    if match:
+        return int(match.group(1))
+    return 1 if value == "Title" else 0
+
+
+def docx_text(path: Path):
+    """Readable text of a .docx: paragraphs in order, headings as #, table rows as | a | b |.
+    Returns None when it is not a readable Word file."""
+    try:
+        with zipfile.ZipFile(path) as zf:
+            root = ET.fromstring(zf.read("word/document.xml"))
+    except (zipfile.BadZipFile, KeyError, ET.ParseError, OSError, ValueError):
+        return None
+    body = root.find(W + "body")
+    if body is None:
+        return None
+    lines = []
+    for block in body:
+        if block.tag == W + "p":
+            text = _para_text(block)
+            if text:
+                level = _heading_level(block)
+                lines.append(("#" * level + " " + text) if level else text)
+        elif block.tag == W + "tbl":
+            for row in block.iter(W + "tr"):
+                cells = [" ".join(_para_text(p) for p in tc.iter(W + "p")).strip()
+                         for tc in row.findall(W + "tc")]
+                if any(cells):
+                    lines.append("| " + " | ".join(c.replace("|", "/") for c in cells) + " |")
+    return "\n".join(lines)
+
+
+def cmd_doc(eng: Engagement, args) -> tuple:
+    model_use = _str(eng.record.get("model_use")).strip() or "unconfirmed"
+    if model_use not in ("allowed", "restricted"):
+        model_use = "unconfirmed"
+    notes = _str(eng.record.get("model_use_notes"))
+    cand, raw = resolve_document(eng, args.raw)
+    shown = args.raw
+    if model_use == "unconfirmed":
+        return _refuse("policy-unconfirmed", shown, model_use)
+    resolved = cand.resolve()
+    try:
+        rel = resolved.relative_to(raw).as_posix()
+    except ValueError:
+        return _refuse("outside-raw", shown, model_use, _path=args.raw)
+    if rel == "." or not resolved.is_file():
+        return _refuse("not-found", rel if rel != "." else shown, model_use)
+    suffix = resolved.suffix.lower()
+    fmt = DOC_FORMATS.get(suffix)
+    if fmt is None:
+        return _refuse("unsupported-format", rel, model_use, _ext=suffix or "(no extension)")
+    source = restricted_registration(eng, rel)
+    if source:
+        return _refuse("restricted-source", rel, model_use, restricted_source=source)
+    if model_use == "restricted" and not args.permitted:
+        return _refuse("needs-permission", rel, model_use, model_use_notes=notes)
+    out = {"document": rel, "path": str(resolved), "format": fmt,
+           "read_with": "text" if fmt == "docx" else "Read", "model_use": model_use,
+           "text": None, "truncated": False}
+    if fmt == "docx":
+        text = docx_text(resolved)
+        if not (text or "").strip():
+            return _refuse("unreadable", rel, model_use)
+        out["truncated"] = len(text) > DOCX_CAP
+        out["text"] = text[:DOCX_CAP]
+        if out["truncated"]:
+            out["next_step"] = DOC_TRUNCATED_NEXT_STEP
+    return EXIT_OK, out
+
+
 # --- Entry point ------------------------------------------------------------------
 
 
@@ -965,10 +1179,15 @@ def build_parser() -> argparse.ArgumentParser:
     model = sub.add_parser("model-use", help="set the model-use policy in both files")
     model.add_argument("--set", required=True, choices=MODEL_USE_VALUES)
     model.add_argument("--notes", default="")
+    doc = sub.add_parser("doc", help="may a named document be read; its path, or its text for .docx")
+    doc.add_argument("raw", metavar="RAW", help="a file in 10-sources/raw/ (name or path)")
+    doc.add_argument("--permitted", action="store_true",
+                     help="the consultant allowed this document under the restricted policy")
     return parser
 
 
-COMMANDS = {"status": cmd_status, "check": cmd_check, "refs": cmd_refs, "model-use": cmd_model_use}
+COMMANDS = {"status": cmd_status, "check": cmd_check, "refs": cmd_refs, "model-use": cmd_model_use,
+            "doc": cmd_doc}
 
 
 def main(argv=None, script_path=__file__) -> int:

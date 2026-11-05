@@ -16,6 +16,7 @@ SKILL_FILES = (
     "reference/formats.md",
     "reference/review-and-revise.md",
     "reference/change-convention.md",
+    "reference/documents.md",
     "scripts/charter.py",
 )
 REPO = Path(__file__).resolve().parents[2]
@@ -23,7 +24,8 @@ CONTRACTS = REPO / "specs" / "002-charter-skill" / "contracts"
 DESCRIPTION = (
     "Frame or revise the engagement charter (scope, key questions, hypotheses, assumptions, "
     "stakeholders, lenses) by interviewing the consultant. Use at kickoff, or when the weekly "
-    "steer changes questions, hypotheses or scope. Never reads client documents."
+    "steer changes questions, hypotheses or scope. Can draft answers from a SOW, brief or change "
+    "order in 10-sources/raw/ (or pasted), once the model-use policy allows it."
 )
 
 
@@ -74,7 +76,7 @@ def test_refresh_adds_charter_to_010_engagement(tmp_path, git_env):
     assert not (eng / ".claude").exists()
     result = run_cairn("refresh", cwd=eng, env=git_env)
     assert result.returncode == 0, result.stderr
-    assert "framework 0.1.0 → 0.3.0" in result.stdout
+    assert "framework 0.1.0 → 0.4.0" in result.stdout
     for rel in SKILL_FILES:
         assert (eng / ".claude" / "skills" / "charter" / rel).read_bytes() == (SKILL_DIR / rel).read_bytes()
     for _, _, name in layout.TEMPLATES:
@@ -132,14 +134,14 @@ def test_skill_md_size_and_references():
 def _never_rules(text: str) -> list:
     section = text.split("## Never", 1)[1]
     section = re.split(r"\n## ", section, maxsplit=1)[0]
-    rules = re.findall(r"^\d\. (.*?)(?=^\d\. |\Z)", section, re.S | re.M)
+    rules = re.findall(r"^\d+\. (.*?)(?=^\d+\. |\Z)", section, re.S | re.M)
     return [" ".join(rule.split()) for rule in rules]
 
 
 def test_never_rules_match_contract():
     contract = _never_rules((CONTRACTS / "charter-skill.md").read_text())
     skill = _never_rules((SKILL_DIR / "SKILL.md").read_text())
-    assert len(contract) == 9
+    assert len(contract) == 10
     assert skill == contract
 
 
@@ -162,7 +164,7 @@ def test_refresh_adds_settings_and_keeps_edits(tmp_path, git_env):
     assert json.loads(settings.read_text()) == SETTINGS
     mine = {"permissions": {"allow": ["Bash(python3 *charter.py*)", "Bash(git status)"]}}
     settings.write_text(json.dumps(mine))
-    newer = fixture_assets(tmp_path, "0.3.0", name="v3")
+    newer = fixture_assets(tmp_path, "0.5.0", name="v5")
     result = run_cairn("refresh", cwd=eng, env=git_env | newer)
     assert result.returncode == 0, result.stderr
     assert json.loads(settings.read_text()) == mine

@@ -1,0 +1,14 @@
+name: A change order proposes only its differences (004 US4; FR-019)
+fixture: approved
+documents: [change-order-synthetic.md]
+documents_allowed: [change-order-synthetic.md]
+turns:
+  - "/charter Here's a change order: 10-sources/raw/change-order-synthetic.md"
+  - "Confirm both changes. Reason: as the change order says, the leadership offsite moved. Trigger: client feedback."
+  - "Skip suggestions and the review. Show me the end summary."
+expect:
+  files_contain:
+    00-charter/scope.md: ["2026-12-11", "carrier scorecard"]
+    60-log/changelog.md: ["new document: change-order-synthetic.md"]
+  unchanged_files: [00-charter/questions.md, 00-charter/hypotheses.md, 00-charter/assumptions.md,
+                    00-charter/stakeholders.md, 00-charter/lenses.md, engagement.md]

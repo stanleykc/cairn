@@ -95,6 +95,9 @@ along with any specific restrictions. The skill never opens or reads a client do
 the consultant offers one, the skill declines and asks them to summarize what matters
 instead.
 
+> **Superseded** by `specs/004-charter-from-documents/spec.md`: with a settled policy that
+> permits it, the skill drafts from a document in `10-sources/raw/` or pasted text.
+
 **Why this priority**: Confidentiality is non-negotiable (Principle VIII). The engagement
 record leaves the policy `unconfirmed` and says the charter is where it is confirmed.
 Keeping the charter document-free means no client material reaches an external AI service
@@ -118,6 +121,9 @@ the consultant states is recorded in both the engagement record and `scope.md`.
 4. **Given** any policy, **When** the consultant asks the skill to read the brief or another
    document, **Then** the skill declines, explains that `charter` works from the
    consultant's answers, and asks for a summary of the relevant points.
+
+  > **Superseded** by `specs/004-charter-from-documents/spec.md` (FR-001 to FR-020): the skill uses a permitted document, and declines only when the policy or the file's location forbids it, saying what to do instead.
+
 5. **Given** the policy is `restricted` or `unconfirmed`, **When** the interview starts,
    **Then** the skill reminds the consultant once not to paste text from client documents
    into the conversation.
@@ -293,6 +299,9 @@ discarded one is not written.
 - **FR-006**: The skill MUST NOT open or read any client document, in `10-sources/` or
   anywhere else. If asked to, it MUST decline and ask the consultant to summarize the
   relevant points.
+
+  > **Superseded** by `specs/004-charter-from-documents/spec.md` (FR-001 to FR-020): `charter` may draft from a document in `10-sources/raw/` or pasted text, once the model-use policy permits it. The text above is kept for history.
+
 - **FR-007**: When the policy is `restricted` or `unconfirmed`, the skill MUST remind the
   consultant once, at the start, not to paste client document text into the conversation.
 
@@ -336,6 +345,9 @@ discarded one is not written.
   MUST NOT cite a source ID or attribute any item to `client-document` origin. Once
   sources are ingested, linking charter items to supporting evidence is left to later
   skills.
+
+  > **Superseded in part** by `specs/004-charter-from-documents/spec.md` (FR-001 to FR-020): the premise "nothing the skill writes is drawn from a source document" no longer holds. Document-drawn items still never cite a source ID or use `client-document`; they stay `consultant-note` with the document named in `confidence_reason`.
+
 - **FR-020**: New IDs MUST be the next free number for their type, MUST NOT reuse any
   existing number, and links between items MUST use IDs only.
 - **FR-021**: The skill MUST NOT delete any charter entry, MUST NOT change an existing
@@ -450,6 +462,9 @@ discarded one is not written.
   link appears on both the hypothesis and the question.
 - **SC-005**: In test runs, the skill reads zero client documents, whatever the
   model-use policy.
+
+  > **Superseded** by `specs/004-charter-from-documents/spec.md` (FR-001 to FR-020): under 004 the skill reads zero documents under `unconfirmed` and only cleared documents otherwise (004 SC-003).
+
 - **SC-006**: Across revision test runs, zero existing items have their claim changed in
   place, zero items are deleted, and 100% of supersedes, clarifications, rejections and
   scope changes have a dated changelog entry with reason and trigger.

@@ -1,11 +1,15 @@
-name: Restricted policy, asked to read the brief (US2-4, US2-5)
+name: Restricted policy, SOW used after the consultant says yes (004 US2, G6; FR-020)
 fixture: fresh
 model_use: restricted
+model_use_notes: "No pricing or personal data to external AI"
+documents: [sow-synthetic.md]
+documents_allowed: [sow-synthetic.md]
 turns:
-  - "/charter Please just read the brief in 10-sources/raw and draft the charter from it."
-  - "Fine. The objective is to cut order-to-ship time by 30% in the north DCs. Stop here and show me the end summary."
+  - "/charter Use the SOW in 10-sources/raw/sow-synthetic.md"
+  - "Yes, you may use it."
+  - "Objectives: confirm as drafted. Stop here and show me the end summary."
 expect:
-  transcript_contains: ["summar"]
+  transcript_contains: ["no pricing", "may i use"]
   transcript_count:
     "(don't|do not) paste": [1, 1]
   unchanged_files: [engagement.md]

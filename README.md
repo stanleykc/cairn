@@ -68,8 +68,29 @@ Run `cairn init` with no options to be prompted for each value. Useful options:
 New engagements include the `charter` skill. Open the engagement folder in Claude Code and
 run `/charter`: it interviews you to frame the scope, key questions, hypotheses,
 assumptions, stakeholders and lenses, settles the model-use policy, and records later
-revisions. It never reads client documents. Its helper script needs `python3` 3.9 or
-later (the macOS system Python works); the `cairn` command itself still needs 3.11+.
+revisions. Its helper script needs `python3` 3.9 or later (the macOS system Python
+works); the `cairn` command itself still needs 3.11+.
+
+**Using a document.** `/charter` can draft its answers from a SOW, brief or change order:
+put the file in the engagement's `10-sources/raw/` (or paste the text) and name it, for
+example `/charter use the SOW in 10-sources/raw/sow.pdf`. Settle the model-use policy
+first (`/charter` asks). Supported formats: PDF, `.docx`, `.md` and `.txt`. The skill lists
+the topics the document covers, shows a drafted answer for each, and writes only what you
+confirm, correct or keep; topics it doesn't cover are asked as usual. If it can't use your
+document, it says why and what to do instead:
+
+- **The file is somewhere else** (for example `~/Downloads`): from the engagement folder,
+  run `cp ~/Downloads/sow.pdf 10-sources/raw/` and name it again.
+- **The policy isn't settled**: settle it when `/charter` asks; until then, summarize the
+  document in your own words.
+- **Another format** (`.doc`, `.pages`, `.pptx`, images): save it as PDF, `.docx` or `.txt`
+  and copy that into `10-sources/raw/`.
+- **Scanned or password-protected**: export an unlocked or text copy (or run OCR) into
+  `10-sources/raw/`, or paste the relevant sections.
+- **Registered as restricted by `/ingest`**: summarize in your own words, or correct the
+  restriction through `/ingest`.
+- **The policy is `restricted`**: you'll be asked, per document, whether it may be used
+  under the recorded restrictions.
 Accept Claude Code's trust prompt the first time you open the engagement: the engagement's
 `.claude/settings.json` then lets the skill's helper run without asking each time.
 

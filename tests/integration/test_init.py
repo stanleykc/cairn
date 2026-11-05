@@ -75,7 +75,7 @@ def test_engagement_record(acme):
         "team": [],
         "start_date": date.today(),
         "created": date.today(),
-        "framework_version": "0.3.0",
+        "framework_version": "0.4.0",
         "model_use": "unconfirmed",
         "model_use_notes": "",
     }
@@ -108,7 +108,7 @@ def test_no_numbered_objects(acme):
 def test_manifest(acme):
     manifest = json.loads((acme / ".cairn" / "manifest.json").read_text())
     assert manifest["schema"] == 1
-    assert manifest["framework_version"] == "0.3.0"
+    assert manifest["framework_version"] == "0.4.0"
     expected = {f"_templates/{name}" for _, _, name in layout.TEMPLATES}
     assert {f for f in manifest["files"] if not f.startswith(".claude/")} == expected
     for rel, digest in manifest["files"].items():
@@ -145,7 +145,7 @@ def test_summary(tmp_path, git_env):
     result = run_cairn(*INIT_ACME, "--no-git", cwd=tmp_path, env=git_env)
     out = result.stdout
     assert f"Created engagement {ACME_ID} at {tmp_path.resolve() / ACME_ID}" in out
-    assert "framework 0.3.0 · 16 folders · 12 seed files · 12 templates · 2 skills" in out
+    assert "framework 0.4.0 · 16 folders · 12 seed files · 12 templates · 2 skills" in out
     assert "Model-use policy is UNCONFIRMED" in out
     assert "1. Confirm the client's model-use policy" in out
     assert "2. Run the `charter` skill" in out
