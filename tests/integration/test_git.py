@@ -14,7 +14,7 @@ def test_default_run_commits_once(tmp_path, git_env):
     assert result.returncode == 0, result.stderr
     eng = tmp_path / ACME_ID
     log = git("log", "--format=%s", cwd=eng, env=git_env).splitlines()
-    assert log == [f"Initialize engagement {ACME_ID} (cairn 0.2.0)"]
+    assert log == [f"Initialize engagement {ACME_ID} (cairn 0.3.0)"]
     assert git("remote", cwd=eng, env=git_env) == ""
     assert git("status", "--porcelain", cwd=eng, env=git_env) == ""
     tracked = git("ls-files", cwd=eng, env=git_env).splitlines()

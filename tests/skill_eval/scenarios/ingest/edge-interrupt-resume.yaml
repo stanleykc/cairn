@@ -1,0 +1,14 @@
+name: Interrupt and resume a long PDF (edge case, R12)
+fixture: fresh
+model_use: allowed
+raw: [long-40.pdf]
+turns:
+  - "/ingest long-40.pdf — weekly throughput notes from the ops team, October 2026. Process only the first batch of 20 pages, then stop for today without finalizing."
+  - say: "/ingest"
+    new_session: true
+  - "Yes, carry on and finish it."
+expect:
+  sources:
+    long-40.pdf:
+      fields: {extraction_status: complete, pages_reviewed: 40}
+  index_rows: 1

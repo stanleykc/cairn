@@ -1,0 +1,10 @@
+name: Policy unconfirmed (US3-1)
+fixture: fresh
+model_use: unconfirmed
+raw: [kickoff.vtt, client-process.md]
+turns:
+  - "/ingest"
+expect:
+  nothing_written: true
+  no_raw_reads: true
+  transcript_contains: ["/charter"]

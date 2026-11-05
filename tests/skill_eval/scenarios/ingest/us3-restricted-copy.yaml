@@ -1,0 +1,19 @@
+name: A copy of a restricted file (US3, possible_restricted_copy)
+fixture: fresh
+model_use: allowed
+raw_files:
+  hr-attrition.md: "# HR attrition\n\nCANARY-ingest-91c2 attrition by site and quarter.\n"
+  hr-attrition-copy.md: "# HR attrition\n\nCANARY-ingest-91c2 attrition by site and quarter.\n"
+canaries: [CANARY-ingest-91c2]
+turns:
+  - "/ingest hr-attrition.md — it is restricted and must not be sent: HR attrition report from the HR lead, October 2026."
+  - say: "/ingest"
+    new_session: true
+  - "No, it may not be sent. Same details as the original."
+expect:
+  sources:
+    hr-attrition.md:
+      fields: {restricted: true}
+    hr-attrition-copy.md:
+      fields: {restricted: true, extraction_method: none}
+  never_read: [hr-attrition.md, hr-attrition-copy.md]

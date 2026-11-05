@@ -1,0 +1,10 @@
+name: A duplicate copy of an ingested PDF (edge case, FR-027)
+fixture: fresh
+model_use: allowed
+raw: [text-table-chart.pdf, copy-of-text-table-chart.pdf]
+turns:
+  - "/ingest — both are the operations review from the COO office, 14 Oct 2026."
+  - "Finish and show the summary."
+expect:
+  source_count: 1
+  transcript_contains: ["identical"]

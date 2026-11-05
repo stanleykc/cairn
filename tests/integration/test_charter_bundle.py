@@ -57,7 +57,7 @@ def test_skill_front_matter():
     assert meta["description"] == DESCRIPTION
     assert meta["argument-hint"]
     assert meta["allowed-tools"] == "Read, Edit, Write, Bash(python3 *charter.py*)"
-    assert layout.bundled_skills(PACKAGE_ASSETS) == [("charter", DESCRIPTION)]
+    assert ("charter", DESCRIPTION) in layout.bundled_skills(PACKAGE_ASSETS)
 
 
 def test_no_placeholder_files_in_skill():
@@ -74,7 +74,7 @@ def test_refresh_adds_charter_to_010_engagement(tmp_path, git_env):
     assert not (eng / ".claude").exists()
     result = run_cairn("refresh", cwd=eng, env=git_env)
     assert result.returncode == 0, result.stderr
-    assert "framework 0.1.0 → 0.2.0" in result.stdout
+    assert "framework 0.1.0 → 0.3.0" in result.stdout
     for rel in SKILL_FILES:
         assert (eng / ".claude" / "skills" / "charter" / rel).read_bytes() == (SKILL_DIR / rel).read_bytes()
     for _, _, name in layout.TEMPLATES:
@@ -143,7 +143,7 @@ def test_never_rules_match_contract():
     assert skill == contract
 
 
-SETTINGS = {"permissions": {"allow": ["Bash(python3 *charter.py*)"]}}
+SETTINGS = {"permissions": {"allow": ["Bash(python3 *charter.py*)", "Bash(python3 *ingest.py*)"]}}
 
 
 def test_init_ships_settings(tmp_path, git_env):

@@ -1,0 +1,11 @@
+name: Captions without speakers (edge case, FR-016)
+fixture: fresh
+model_use: allowed
+raw: [unlabelled.vtt]
+turns:
+  - "/ingest unlabelled.vtt — a short call recording from 20 Oct 2026, from me."
+expect:
+  transcript_contains: ["speaker"]
+  sources:
+    unlabelled.vtt:
+      matches: ["^\\*\\*\\(unlabelled\\)\\*\\* \\[T1"]

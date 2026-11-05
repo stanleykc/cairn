@@ -1,0 +1,18 @@
+name: Restricted policy, one file may not be sent (US3-2..4, SC-002)
+fixture: fresh
+model_use: restricted
+model_use_notes: "No HR files"
+raw: [kickoff.vtt, client-process.md]
+raw_files:
+  hr-attrition.md: "# HR attrition\n\nCANARY-ingest-91c2 attrition by site and quarter.\n"
+canaries: [CANARY-ingest-91c2]
+turns:
+  - "/ingest"
+  - "hr-attrition.md may not be sent: it's the HR attrition report from the HR lead, October 2026. Everything else may be sent."
+  - "kickoff.vtt is the 20 Oct 2026 kickoff call I recorded; client-process.md is the client's returns note from the ops team. Finish everything and show the summary."
+expect:
+  sources:
+    hr-attrition.md:
+      fields: {restricted: true, extraction_method: none}
+  index_matches: ["^\\| S-\\d+ \\| .* \\| yes \\|$"]
+  never_read: [hr-attrition.md]

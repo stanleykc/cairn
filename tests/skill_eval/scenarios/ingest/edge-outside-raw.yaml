@@ -1,0 +1,13 @@
+name: A file outside raw/ (edge case)
+fixture: fresh
+model_use: allowed
+outside_files:
+  downloads/notes-from-desktop.md: "# Desk notes\n\nThe yard schedule changes in November.\n"
+turns:
+  - "/ingest downloads/notes-from-desktop.md — my own notes, 1 Nov 2026."
+  - "Yes, copy it in and ingest it, then show the summary."
+expect:
+  unchanged_files: [downloads/notes-from-desktop.md]
+  sources:
+    notes-from-desktop.md:
+      fields: {origin: consultant-note}

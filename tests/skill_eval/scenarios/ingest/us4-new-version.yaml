@@ -1,0 +1,16 @@
+name: A new version of a source (US4, FR-028)
+fixture: fresh
+model_use: allowed
+raw: [ops-review.pdf]
+turns:
+  - "/ingest ops-review.pdf — operations review from the COO office, October 2026. Finish it."
+  - say: "/ingest ops-review-v2.pdf — the revised operations review, same office, November 2026."
+    new_session: true
+    add_raw: [ops-review-v2.pdf]
+  - "Yes, it replaces the earlier one: revised after the site visits, new evidence. Finish it."
+expect:
+  sources:
+    ops-review-v2.pdf:
+      fields: {supersedes: ["S-001"], status: proposed}
+    ops-review.pdf:
+      fields: {status: proposed}

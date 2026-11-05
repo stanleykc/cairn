@@ -1,0 +1,23 @@
+name: Transcripts, a summary and notes (US2)
+fixture: tests/fixtures/ingest/golden/us2
+model_use: allowed
+raw: [kickoff-transcript.md, kickoff.vtt, weekly-summary.md, client-process.md, site-notes.txt]
+turns:
+  - "/ingest"
+  - "Both kickoff files are the 20 Oct 2026 kickoff call I recorded. weekly-summary.md is Sam Okafor's summary of the 27 Oct weekly sync. client-process.md is the client's returns note from the ops team, October 2026. site-notes.txt are my own notes from the 3 Oct site visit."
+  - "Dana is Dana Reyes. Speaker 2 is Lee Park's colleague Priya Shah, she's not in the stakeholder list. Lee is Lee Park."
+  - "Looks good, finish them all and show me the summary."
+expect:
+  source_count: 5
+  sources:
+    kickoff.vtt:
+      fields: {material: meeting-transcript, meeting_date: "2026-10-20"}
+      matches: ["^\\*\\*Speaker 2\\*\\* \\[T2 · 00:00:11\\]:", "^\\| Speaker 2 \\| .*Priya Shah"]
+    kickoff-transcript.md:
+      fields: {material: meeting-transcript}
+      matches: ["^\\*\\*Dana\\*\\* \\[T1 · 00:00:04\\]:"]
+    weekly-summary.md:
+      fields: {material: meeting-notes, author_kind: person, meeting_date: "2026-10-27", origin: interview-meeting}
+    site-notes.txt:
+      fields: {origin: consultant-note}
+      matches: ["^\\[¶1\\] "]

@@ -1,0 +1,21 @@
+name: Review, approve, reject and correct (US4)
+fixture: tests/fixtures/ingest/golden/us4
+model_use: allowed
+raw: [scanned.pdf, text-table-chart.pdf, client-process.md]
+turns:
+  - "/ingest review"
+  - "approve S-002"
+  - "reject S-003, it's the wrong year — new evidence"
+  - "p. 1 of S-001 should say WMS not VMS"
+  - "Nothing else for now. Show me the summary."
+expect:
+  sources:
+    text-table-chart.pdf:
+      fields: {status: active}
+    client-process.md:
+      fields: {status: rejected, change_trigger: new-evidence}
+    scanned.pdf:
+      fields: {status: proposed}
+      matches: ["^> \\[!corrected\\] \\d{4}-\\d{2}-\\d{2}", "^> was: .*VMS", "WMS"]
+  changelog_matches: ["^\\d{4}-\\d{2}-\\d{2} · S-001 @ p\\. 1 · extraction-fix · .* · -$", "· S-003 · reject · "]
+  transcript_contains: ["O-001"]

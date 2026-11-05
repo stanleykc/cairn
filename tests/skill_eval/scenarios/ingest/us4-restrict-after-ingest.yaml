@@ -1,0 +1,14 @@
+name: Restrict a source after ingest, then remove its content (US4, edge case)
+fixture: tests/fixtures/ingest/golden/us4
+model_use: allowed
+raw: [scanned.pdf, text-table-chart.pdf, client-process.md]
+turns:
+  - "/ingest review S-003"
+  - "S-003 should never have been sent, it holds HR data. Mark it restricted."
+  - "Please remove its content too. I'm Test Lead."
+expect:
+  sources:
+    client-process.md:
+      fields: {restricted: true, content_removed: true, extraction_method: none}
+      contains: ["Restricted: not extracted. Do not open the original with an AI tool."]
+  changelog_matches: ["· S-003 · restrict · .* · -$", "· S-003 · remove-content · .* · -$", "^> content removed on instruction of Test Lead"]

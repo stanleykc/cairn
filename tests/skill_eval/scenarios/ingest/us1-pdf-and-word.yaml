@@ -1,0 +1,24 @@
+name: PDFs and a Word document (US1)
+fixture: fresh
+model_use: allowed
+raw: [text-table-chart.pdf, scanned.pdf, hard-page.pdf, process-manual.docx]
+turns:
+  - "/ingest"
+  - "text-table-chart.pdf: operations review from the COO office, 14 Oct 2026, their own view, treat targets as aspirational. scanned.pdf: method appendix from the finance team, September 2026. hard-page.pdf: site visit checklist from the site supervisor, 3 Oct 2026. process-manual.docx: inbound process manual from the operations manager, September 2026 draft."
+  - "Thanks, please finish all four and show me the end summary."
+expect:
+  source_count: 4
+  index_rows: 4
+  sources:
+    text-table-chart.pdf:
+      fields: {status: proposed, audience: internal, derived: true}
+      matches: ["^\\| *Site *\\| *Orders", "^> \\[!derived\\] vision-description", "^### p\\. 2"]
+    scanned.pdf:
+      fields: {extraction_method: ocr, derived: true, status: proposed}
+      matches: ["^> \\[!derived\\] ocr"]
+    hard-page.pdf:
+      uncertain_includes: ["p. 2"]
+    process-manual.docx:
+      matches: ["^# Receiving", "^## Shifts", "^> \\[!derived\\] chart-data", "\\{\\+\\+"]
+  index_not_contains: [Acme]
+  transcript_contains: ["Next"]
