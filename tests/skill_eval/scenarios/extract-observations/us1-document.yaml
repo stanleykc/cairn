@@ -1,0 +1,10 @@
+name: Cited observations from an ingested document (US1)
+fixture: golden/us1
+turns:
+  - "/extract-observations S-001"
+expect:
+  new_count: [5, 40]
+  all_new: {source: S-001, status: proposed, audience: internal}
+  all_new_match: ["^locator: \"p\\. \\d", "^## Passage\\n\\n> "]
+  some_new_match: ["^passage_kind: table-row$", "^locator: \"p\\. 2 › table 1 › row \\d", "^derived: true$"]
+  transcript_contains: ["triage", "Next"]

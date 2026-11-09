@@ -1,0 +1,8 @@
+name: Run outside an engagement explains cairn init (FR-002)
+fixture: golden/us1
+run_outside: true
+turns:
+  - "/extract-observations"
+expect:
+  new_count: [0, 0]
+  transcript_contains: ["cairn init"]

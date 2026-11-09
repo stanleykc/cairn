@@ -1,0 +1,7 @@
+name: A stakeholder's perspective is stated in the summary (US2-4)
+fixture: golden/us2
+turns:
+  - "/extract-observations S-005 for Q-003 from the warehouse manager's point of view"
+expect:
+  all_new_match: ["^questions: \\[.*\"Q-003\""]
+  transcript_contains: ["warehouse manager"]

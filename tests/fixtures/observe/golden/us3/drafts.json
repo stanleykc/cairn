@@ -1,0 +1,112 @@
+{
+  "steering": {
+    "focus": [],
+    "exclude": [],
+    "perspective": ""
+  },
+  "drafts": [
+    {
+      "source": "S-001",
+      "locator": "00:00:11",
+      "quote": "The backlog really started in July, when we lost two shift leads.",
+      "claim": "Speaker 2 said the backlog really started in July, when they lost two shift leads.",
+      "title": "Speaker 2 dates the backlog to July and the loss of two shift leads",
+      "questions": [
+        "Q-002",
+        "Q-003"
+      ],
+      "confidence": "medium",
+      "confidence_reason": "first-hand account in the kickoff call",
+      "translated": false
+    },
+    {
+      "source": "S-006",
+      "locator": "T2",
+      "quote": "Honestly, sales always sends the orders late, that's the whole problem.",
+      "claim": "Speaker 2 said that sales always sends the orders late and called it the whole problem.",
+      "title": "Speaker 2 says sales always sends orders late",
+      "questions": [
+        "Q-003"
+      ],
+      "confidence": "medium",
+      "confidence_reason": "first-hand opinion about another team; not backed by data in the interview",
+      "translated": false
+    },
+    {
+      "source": "S-006",
+      "locator": "T3",
+      "quote": "I think the late orders are mostly from two key accounts.",
+      "claim": "Lee said they think the late orders are mostly from two key accounts.",
+      "title": "Lee thinks late orders come mostly from two key accounts",
+      "questions": [
+        "Q-003"
+      ],
+      "confidence": "low",
+      "confidence_reason": "a guess, stated as one",
+      "translated": false
+    },
+    {
+      "source": "S-006",
+      "locator": "T4",
+      "quote": "We estimated that about a third of orders arrive after the cut-off.",
+      "claim": "Dana Reyes said they estimated that about a third of orders arrive after the cut-off.",
+      "title": "Dana Reyes estimates a third of orders arrive after cut-off",
+      "questions": [
+        "Q-003"
+      ],
+      "confidence": "medium",
+      "confidence_reason": "an estimate by the head of fulfilment",
+      "translated": false
+    },
+    {
+      "source": "S-003",
+      "locator": "§ Weekly sync, north sites > Discussion",
+      "quote": "The backlog at North 2 is down from last week.",
+      "claim": "The summary by Sam Okafor reports that the backlog at North 2 is down from last week.",
+      "title": "Summary reports the North 2 backlog is down",
+      "questions": [
+        "Q-003"
+      ],
+      "confidence": "medium",
+      "confidence_reason": "a colleague's second-hand summary",
+      "translated": false
+    },
+    {
+      "source": "S-005",
+      "locator": "§ Weekly sync, AI notes > Summary",
+      "quote": "Team agreed to pilot a second shift at North 2 starting in January.",
+      "claim": "The AI notes by MeetBot report that the team agreed to pilot a second shift at North 2 starting in January.",
+      "title": "AI notes report a second-shift pilot at North 2 from January",
+      "questions": [
+        "Q-002"
+      ],
+      "confidence": "medium",
+      "confidence_reason": "AI note-taker summary, capped at medium",
+      "translated": false
+    },
+    {
+      "source": "S-004",
+      "locator": "comment 1 @ § Receiving",
+      "quote": "Is this still true since the new dock schedule?",
+      "claim": "A reviewer comment by J. Ortiz asks whether this is still true since the new dock schedule.",
+      "title": "Reviewer asks if the receiving rule still holds",
+      "questions": [],
+      "confidence": "low",
+      "confidence_reason": "a reviewer's question on a section with uncertain tracked changes",
+      "translated": false
+    },
+    {
+      "source": "S-004",
+      "locator": "§ Receiving",
+      "quote": "Pallets are checked against the ASN {++within two hours ++}on arrival{-- at the dock--}.",
+      "claim": "An unaccepted tracked change would make the text say pallets are checked against the ASN within two hours on arrival.",
+      "title": "Unaccepted change adds a two-hour ASN check",
+      "questions": [
+        "Q-003"
+      ],
+      "confidence": "low",
+      "confidence_reason": "unaccepted tracked change; uncertain until accepted",
+      "translated": false
+    }
+  ]
+}

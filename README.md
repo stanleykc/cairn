@@ -30,8 +30,8 @@ for whoever comes next.
 - A folder convention for engagements, using plain markdown files with YAML front matter
 - Templates for each object type (observation, finding, issue, option, decision, lesson)
 - Agent skills for ingesting, extracting, synthesizing, researching, challenging and
-  drafting deliverables. The first two, `charter` and `ingest`, ship in
-  `src/cairn/assets/skills/`.
+  drafting deliverables. The first three, `charter`, `ingest` and `extract-observations`,
+  ship in `src/cairn/assets/skills/`.
 
 ## Status
 
@@ -106,6 +106,15 @@ Installing poppler is recommended but not required (`brew install poppler` or
 `apt install poppler-utils`): with it, PDF text is extracted and checked word for word;
 without it, only PDFs of up to 10 pages can be ingested, and they are marked for
 spot-checking. The helper needs `python3` 3.9 or later.
+
+Then run `/extract-observations` (or `/extract-observations S-004 for Q-003; ignore the
+appendix`) to pull observations from ingested sources. Each observation is one claim from
+one source, with the exact passage it came from, a locator (page, heading path, timestamp
+or table row), the source's provenance and a capped confidence, tagged to the charter's
+questions. The helper checks every passage word for word against the source before it
+writes `_inbox/O-###.md` as `proposed`; you review the inbox and decide what to keep.
+Restricted sources are skipped unread, a re-run never proposes a claim already recorded or
+rejected, and adding a question tag to an existing observation is logged in the changelog.
 
 When the framework gains new templates or skills, update an engagement with:
 

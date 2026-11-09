@@ -1,0 +1,8 @@
+name: The real client name never appears in titles, claims or the summary (FR-021)
+fixture: golden/us1
+turns:
+  - "/extract-observations S-001"
+expect:
+  new_count: [1, 40]
+  none_new_match: ["(?i)\\bacme\\b"]
+  transcript_not_contains: ["Acme"]

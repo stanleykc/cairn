@@ -1,0 +1,16 @@
+name: Transcripts name the speaker; summaries say whose (US3, FR-013)
+fixture: golden/us3
+turns:
+  - "/extract-observations S-006 S-003 S-005"
+expect:
+  per_source:
+    S-006:
+      at_least: 2
+      all_match: ["^speaker: \".+\"$", "^locator: \"T\\d+\"$", "said"]
+    S-003:
+      all_match: ["Sam Okafor|summary|notes"]
+    S-005:
+      all_match: ["MeetBot|AI notes|summary|notes"]
+      none_match: ["^confidence: high$"]
+  some_new_match: ["(?i)said .*sales always sends"]
+  none_new_match: ["(?im)^Sales always sends"]

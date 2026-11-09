@@ -246,7 +246,7 @@ def test_status_engagement_block_and_backend(engagement):
     block = out["engagement"]
     assert block["client_label"] == "Northwind" and block["uses_code_name"] is True
     assert block["model_use"] == "restricted" and block["model_use_notes"] == "No HR files"
-    assert block["framework_version"] == "0.4.0" and block["lead_consultant"] == "Test Lead"
+    assert block["framework_version"] == "0.5.0" and block["lead_consultant"] == "Test Lead"
     assert "Acme" not in json.dumps(out)
     assert out["pdf_backend"]["tools"] == list(POPPLER)
     assert out["pdf_backend"]["install_hint"] == "brew install poppler  |  apt install poppler-utils"

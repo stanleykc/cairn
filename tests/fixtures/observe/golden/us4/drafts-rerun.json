@@ -1,0 +1,135 @@
+{
+  "steering": {
+    "focus": [],
+    "exclude": [],
+    "perspective": ""
+  },
+  "drafts": [
+    {
+      "source": "S-001",
+      "locator": "p. 2",
+      "quote": "Order-to-ship time rose in both northern sites during Q3.",
+      "claim": "The FY25 operations review says order-to-ship time rose in both northern sites during Q3.",
+      "title": "Order-to-ship time rose at both northern sites in Q3",
+      "questions": [
+        "Q-003"
+      ],
+      "confidence": "medium",
+      "confidence_reason": "client's own review; method not stated",
+      "translated": false
+    },
+    {
+      "source": "S-001",
+      "locator": "p. 2 › table 1 › row 2 › Days to ship",
+      "quote": "| North 2 | 38,950 | 3.9 |",
+      "claim": "The FY25 operations review gives North 2's days to ship as 3.9.",
+      "title": "North 2 averages 3.9 days to ship",
+      "questions": [
+        "Q-003"
+      ],
+      "confidence": "medium",
+      "confidence_reason": "client's own KPI table; method not stated",
+      "translated": false
+    },
+    {
+      "source": "S-001",
+      "locator": "p. 2",
+      "quote": "> **Description:** Line chart with two lines rising between Q1 and Q3, then flattening in Q4.",
+      "claim": "The chart description on p. 2 says the chart's two lines rise between Q1 and Q3, then flatten in Q4.",
+      "title": "Chart lines rise from Q1 to Q3, then flatten in Q4",
+      "questions": [
+        "Q-003"
+      ],
+      "confidence": "medium",
+      "confidence_reason": "description of a chart image; check against the original",
+      "translated": false
+    },
+    {
+      "source": "S-001",
+      "locator": "p. 3",
+      "quote": "Confirm the shift lead hiring plan for the north sites.",
+      "claim": "The FY25 operations review lists confirming the shift lead hiring plan for the north sites as a next step.",
+      "title": "Review asks to confirm the north-site shift lead hiring plan",
+      "questions": [
+        "Q-002"
+      ],
+      "confidence": "medium",
+      "confidence_reason": "client's own next steps",
+      "translated": false
+    },
+    {
+      "source": "S-004",
+      "locator": "§ Process manual",
+      "quote": "This manual describes inbound receiving at the north sites.",
+      "claim": "The inbound process manual says it describes inbound receiving at the north sites.",
+      "title": "Process manual covers inbound receiving at the north sites",
+      "questions": [],
+      "confidence": "medium",
+      "confidence_reason": "client's current process manual, September draft",
+      "translated": false
+    },
+    {
+      "source": "S-004",
+      "locator": "§ Receiving > Dock wait time",
+      "quote": "Door markers are painted yellow.",
+      "claim": "The inbound process manual says door markers are painted yellow.",
+      "title": "Door markers are painted yellow",
+      "questions": [],
+      "confidence": "low",
+      "confidence_reason": "process manual section under review",
+      "translated": false
+    },
+    {
+      "source": "S-004",
+      "locator": "§ Receiving > Dock wait time › table 1 › row 2 › Minutes",
+      "quote": "| Late | 51 |",
+      "claim": "The process manual's chart data gives the late shift's dock wait time as 51 minutes.",
+      "title": "Late shift dock wait is 51 minutes in the chart data",
+      "questions": [
+        "Q-003"
+      ],
+      "confidence": "low",
+      "confidence_reason": "chart data in a section with uncertain tracked changes",
+      "translated": false
+    },
+    {
+      "source": "S-003",
+      "locator": "p. 2",
+      "quote": "Footnote: cycle counts were skipped on two Fridays in September.",
+      "claim": "The site visit checklist says cycle counts were skipped on two Fridays in September.",
+      "title": "Cycle counts skipped on two Fridays in September",
+      "questions": [
+        "Q-002"
+      ],
+      "confidence": "low",
+      "confidence_reason": "faint text on p. 2",
+      "translated": false
+    },
+    {
+      "source": "S-001",
+      "locator": "p. 3",
+      "quote": "Review carrier pickup windows with the transport team.",
+      "claim": "The FY25 operations review lists reviewing carrier pickup windows with the transport team as a next step.",
+      "title": "Review asks to check carrier pickup windows",
+      "questions": [
+        "Q-004"
+      ],
+      "confidence": "medium",
+      "confidence_reason": "client's own next steps",
+      "translated": false
+    },
+    {
+      "source": "S-001",
+      "locator": "p. 2",
+      "quote": "Order-to-ship time rose in both northern sites during Q3.",
+      "claim": "The FY25 operations review places the rise in order-to-ship time in Q3.",
+      "title": "Order-to-ship rise happened in Q3",
+      "questions": [
+        "Q-004"
+      ],
+      "confidence": "medium",
+      "confidence_reason": "client's own review; method not stated",
+      "translated": false
+    }
+  ]
+}

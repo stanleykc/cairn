@@ -1,0 +1,9 @@
+name: Unconfirmed model use reads and writes nothing (FR-005)
+fixture: golden/us1
+model_use: unconfirmed
+turns:
+  - "/extract-observations S-001"
+expect:
+  new_count: [0, 0]
+  no_source_reads: true
+  transcript_contains: ["/charter"]

@@ -204,3 +204,122 @@ def make_ingest_engagement(tmp_path, git_env):
         return root
 
     return make
+
+
+# --- extract-observations (feature 005) -----------------------------------------------------
+
+OBSERVE_FIXTURES = REPO / "tests" / "fixtures" / "observe"
+QUESTION_ENTRY = """## {id}: {title}
+
+```yaml
+id: "{id}"
+type: question
+title: {title_json}
+status: {status}
+origin: consultant-note
+confidence: medium
+confidence_reason: "Raised by the sponsor at kickoff"
+inference_confirmed: false
+audience: internal
+supports: []
+contradicts: []
+derived_from: []
+supersedes: []
+clarifies: []
+change_reason: ""
+change_trigger: ""
+created: "2026-11-03"
+priority: medium
+raised_by: "Test Lead"
+hypotheses: []
+```
+
+{title}.
+"""
+
+
+def questions_md(questions) -> str:
+    """A `00-charter/questions.md` holding `questions` ({id, title, status}); none → the seed text."""
+    head = ("---\ntype: collection\nholds: question\n---\n\n# Questions\n\n"
+            "The key questions the engagement must answer.\n\n")
+    if not questions:
+        return head + "No questions yet.\n"
+    return head + "\n".join(
+        QUESTION_ENTRY.format(id=q["id"], title=q["title"], title_json=json.dumps(q["title"]),
+                              status=q.get("status", "active"))
+        for q in questions)
+
+
+def set_front_fields(text: str, fields: dict) -> str:
+    """Replace (or add) flat front matter fields; values are written as YAML/JSON scalars."""
+    for key, value in fields.items():
+        rendered = json.dumps(value) if isinstance(value, (str, list)) else str(value).lower()
+        if re.search(rf"^{re.escape(key)}:", text, re.M):
+            text = re.sub(rf"^{re.escape(key)}:.*$", lambda _: f"{key}: {rendered}", text, count=1, flags=re.M)
+        else:
+            text = text.replace("\n---\n", f"\n{key}: {rendered}\n---\n", 1)
+    return text
+
+
+@pytest.fixture
+def make_observe_engagement(tmp_path, git_env):
+    """Build a committed synthetic engagement for an `extract-observations` scenario.
+
+    Scenario keys used here: `fixture` (a case in `tests/fixtures/observe/`, e.g. `golden/us1`),
+    `model_use`, `code_name` ("" removes the code name), `questions` (list of {id, title,
+    status}, written to `00-charter/questions.md`; `[]` leaves no questions), `existing`
+    (engagement-relative path → text, or → {from: <case-relative path>, fields: {...}}),
+    `source_edits` (S-ID → front matter overrides, e.g. {restricted: true}), `source_appends`
+    (S-ID → a line added at the end of its content region, e.g. a canary),
+    `source_files` (engagement-relative path → text, for test-time sources holding canaries)
+    and `outside_files` (path relative to the folder holding the engagement → text).
+    """
+
+    def make(scenario: dict) -> Path:
+        work = tmp_path / "work"
+        work.mkdir()
+        case = OBSERVE_FIXTURES / scenario["fixture"]
+        record = yaml.safe_load((case / "engagement.md").read_text().split("---\n")[1])
+        if "code_name" in scenario:
+            record["client_code_name"] = scenario["code_name"]
+        cairn(*_init_args(record), cwd=work, env=git_env)
+        [root] = [p for p in work.iterdir() if p.is_dir()]
+        shutil.copytree(case, root, dirs_exist_ok=True,
+                        ignore=shutil.ignore_patterns("expected", "drafts*.json"))
+        if "code_name" in scenario:
+            path = root / "engagement.md"
+            path.write_text(set_front_fields(path.read_text(), {"client_code_name": scenario["code_name"]}))
+        if scenario.get("model_use"):
+            set_model_use(root, scenario["model_use"], scenario.get("model_use_notes", ""))
+        if "questions" in scenario:
+            (root / "00-charter" / "questions.md").write_text(questions_md(scenario["questions"]))
+        for rel, text in (scenario.get("source_files") or {}).items():
+            path = root / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text)
+        for source_id, fields in (scenario.get("source_edits") or {}).items():
+            path = root / "10-sources" / "extracted" / f"{source_id}.md"
+            path.write_text(set_front_fields(path.read_text(), fields))
+        for source_id, line in (scenario.get("source_appends") or {}).items():
+            path = root / "10-sources" / "extracted" / f"{source_id}.md"
+            text = path.read_text()
+            assert "<!-- cairn:content:end -->" in text, source_id
+            path.write_text(text.replace("<!-- cairn:content:end -->", f"{line}\n<!-- cairn:content:end -->", 1))
+        for rel, spec in (scenario.get("existing") or {}).items():
+            path = root / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            if isinstance(spec, dict):
+                text = set_front_fields((case / spec["from"]).read_text(), spec.get("fields", {}))
+            else:
+                text = spec
+            path.write_text(text)
+        for rel, text in (scenario.get("outside_files") or {}).items():
+            path = work / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text)
+        git("init", "-q", cwd=root, env=git_env)
+        git("add", "-A", cwd=root, env=git_env)
+        git("commit", "-q", "-m", "Synthetic engagement for skill evaluation", cwd=root, env=git_env)
+        return root
+
+    return make

@@ -1,0 +1,13 @@
+name: A restricted source is skipped and never read (FR-006, SC-003)
+fixture: golden/us1
+source_edits:
+  S-003: {restricted: true}
+source_appends:
+  S-003: "Reference CANARY-observe-5d1e for the restricted page."
+canaries: [CANARY-observe-5d1e]
+forbidden_sources: [S-003]
+turns:
+  - "/extract-observations S-001 S-003"
+expect:
+  none_new_match: ["^source: \"S-003\"$"]
+  transcript_contains: ["S-003", "restricted"]

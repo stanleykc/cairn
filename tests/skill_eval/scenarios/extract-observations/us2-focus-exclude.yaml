@@ -1,0 +1,9 @@
+name: Focus question and an excluded appendix (US2, SC-003)
+fixture: golden/us2
+turns:
+  - "/extract-observations S-001 S-005 for Q-003, why fulfilment is slow; ignore the appendix"
+expect:
+  new_count: [1, 20]
+  all_new_match: ["^questions: \\[.*\"Q-003\""]
+  none_new_match: ["^locator: \"§ Appendix"]
+  transcript_contains: ["Q-003", "appendix"]

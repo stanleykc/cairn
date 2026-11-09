@@ -76,7 +76,7 @@ def test_refresh_adds_charter_to_010_engagement(tmp_path, git_env):
     assert not (eng / ".claude").exists()
     result = run_cairn("refresh", cwd=eng, env=git_env)
     assert result.returncode == 0, result.stderr
-    assert "framework 0.1.0 → 0.4.0" in result.stdout
+    assert "framework 0.1.0 → 0.5.0" in result.stdout
     for rel in SKILL_FILES:
         assert (eng / ".claude" / "skills" / "charter" / rel).read_bytes() == (SKILL_DIR / rel).read_bytes()
     for _, _, name in layout.TEMPLATES:
@@ -145,7 +145,9 @@ def test_never_rules_match_contract():
     assert skill == contract
 
 
-SETTINGS = {"permissions": {"allow": ["Bash(python3 *charter.py*)", "Bash(python3 *ingest.py*)"]}}
+SETTINGS = {"permissions": {"allow": [
+    "Bash(python3 *charter.py*)", "Bash(python3 *observe.py*)", "Bash(python3 *ingest.py*)",
+]}}
 
 
 def test_init_ships_settings(tmp_path, git_env):
@@ -164,7 +166,7 @@ def test_refresh_adds_settings_and_keeps_edits(tmp_path, git_env):
     assert json.loads(settings.read_text()) == SETTINGS
     mine = {"permissions": {"allow": ["Bash(python3 *charter.py*)", "Bash(git status)"]}}
     settings.write_text(json.dumps(mine))
-    newer = fixture_assets(tmp_path, "0.5.0", name="v5")
+    newer = fixture_assets(tmp_path, "0.6.0", name="v6")
     result = run_cairn("refresh", cwd=eng, env=git_env | newer)
     assert result.returncode == 0, result.stderr
     assert json.loads(settings.read_text()) == mine

@@ -17,9 +17,18 @@ change_reason: ""         # one line: reason for the latest supersede or reject
 change_trigger: ""        # new-evidence | client-feedback | rethinking
 created: "YYYY-MM-DD"
 source: ""                # S-ID
-locator: ""               # page, slide, table, timestamp or URL
+locator: ""               # page, heading path, ¶, timestamp/turn; tables: "<unit> › table n › row m"
 questions: []             # Q-IDs
 derived: false            # true when the claim was read from derived content (OCR, vision description)
+speaker: ""               # transcripts only: confirmed name, else the original label
+passage_kind: ""          # text | table-row | comment | tracked-change
+translated: false         # true when the claim is an English rendering of a non-English passage
 ---
 
+## Claim
+
 One claim, from one source, with no interpretation.
+
+## Passage
+
+> The exact words from the source at the locator.

@@ -1,0 +1,8 @@
+name: No questions in the charter suggests /charter and asks first (US2-7)
+fixture: golden/us1
+questions: []
+turns:
+  - "/extract-observations S-001"
+expect:
+  new_count: [0, 0]
+  transcript_contains: ["/charter"]

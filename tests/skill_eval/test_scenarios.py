@@ -24,6 +24,15 @@ for documents (feature 004):
 Ingest keys: `model_use_notes`, `code_name`, `raw` (MAKE registry names written into
 `10-sources/raw/`), `raw_files` (name → text, for canaries), `outside_files`, `canaries`, `hide_poppler`.
 
+Extract-observations keys (feature 005): `fixture` is a case in `tests/fixtures/observe/`
+(for example `golden/us1`); `model_use`, `code_name`, `questions` ({id, title, status} list
+written to `00-charter/questions.md`), `existing` (observation files placed before the run:
+path → text or {from, fields}), `source_edits` (S-ID → front matter overrides such as
+`restricted: true`), `source_appends` (S-ID → a line added to its content), `source_files`
+(test-time source files, e.g. holding a canary), `forbidden_sources` (S-IDs the session must never `Read`), `canaries` and `run_outside`
+(run the session from a folder next to the engagement that is not an engagement). Its
+`expect` keys are read by `check_observe`.
+
 Set `CAIRN_SKILL_EVAL_OUT=<folder>` to save each scenario's transcript and `git diff` there
 for review by hand (synthetic data only).
 
@@ -37,6 +46,12 @@ Every scenario also runs its skill's "always" assertions (`ALWAYS`):
 - ingest: every file under `10-sources/raw/` has the same SHA-256 before and after (SC-001);
   `ingest.py verify` exits 0; no file has `audience: client-ready`; no listed canary appears
   in the transcript or in any file changed outside `raw/` (SC-002).
+- extract-observations: every file under `10-sources/raw/` keeps its SHA-256 (Principle II);
+  no tool call names `10-sources/raw/` or `engagement.md`; no `Read` of a source listed in
+  `forbidden_sources`; `observe.py verify` exits 0; no file has `audience: client-ready`;
+  no observation in `_inbox/` or `30-observations/` changed status from the set-up, and every
+  new `O-*.md` is `status: proposed` (SC-008); no `Write`/`Edit` call targets `_inbox/O-*.md`
+  (only `add` writes them); no listed canary appears in the transcript or any changed file.
 """
 
 from __future__ import annotations
@@ -60,6 +75,7 @@ CANARY = "CANARY-7f3a"  # same as conftest.CANARY
 SCENARIOS = sorted((HERE / "scenarios").glob("*/*.yaml"))
 SCRIPT = ".claude/skills/charter/scripts/charter.py"
 INGEST_SCRIPT = ".claude/skills/ingest/scripts/ingest.py"
+OBSERVE_SCRIPT = ".claude/skills/extract-observations/scripts/observe.py"
 TURN_TIMEOUT = 900
 # A skill's `allowed-tools` cover only the turn that invoked it. In a real engagement the
 # `.claude/settings.json` that `cairn init` ships allows the helper on later turns, but Claude
@@ -67,7 +83,8 @@ TURN_TIMEOUT = 900
 # shows the trust dialog. So the same rule is passed on every call, as the docs recommend for
 # `-p`; `Transcript.denials()` still fails the scenario if a helper call is ever refused.
 ALLOW_HELPER = "Bash(python3 *charter.py*)"
-ALLOW = {"charter": ALLOW_HELPER, "ingest": "Bash(python3 *ingest.py*)"}
+ALLOW = {"charter": ALLOW_HELPER, "ingest": "Bash(python3 *ingest.py*)",
+         "extract-observations": "Bash(python3 *observe.py*)"}
 POPPLER = ("pdftotext", "pdfinfo", "pdfimages")
 
 
@@ -134,7 +151,7 @@ def path_without_poppler() -> str:
 
 
 def run_session(root: Path, turns: list, transcript: Transcript, skill: str = "charter",
-                env=None, on_turn=None, progress=None) -> Transcript:
+                env=None, on_turn=None, progress=None, cwd=None) -> Transcript:
     resume = False
     for number, turn in enumerate(turns, 1):
         if isinstance(turn, dict):
@@ -152,7 +169,7 @@ def run_session(root: Path, turns: list, transcript: Transcript, skill: str = "c
             assert transcript.session_id, "no session id from the previous turn"
             cmd += ["--resume", transcript.session_id]
         resume = True
-        result = subprocess.run(cmd, cwd=root, capture_output=True, text=True,
+        result = subprocess.run(cmd, cwd=cwd or root, capture_output=True, text=True,
                                 timeout=TURN_TIMEOUT, env=env or dict(os.environ))
         transcript.add(result.stdout)
         assert result.returncode == 0, result.stderr[-2000:]
@@ -447,7 +464,159 @@ def check_ingest(root: Path, transcript: Transcript, expect: dict) -> None:
         assert low <= count <= high, f"{pattern!r} appears {count} times, expected {low}–{high}"
 
 
-ALWAYS = {"charter": charter_always, "ingest": ingest_always}
+# --- extract-observations -----------------------------------------------------------------
+
+
+OBSERVATION_DIRS = ("_inbox", "30-observations")
+
+
+def observation_files(root: Path) -> dict:
+    """Engagement-relative path → text for every `O-*.md` in `_inbox/` and `30-observations/`."""
+    out = {}
+    for folder in OBSERVATION_DIRS:
+        base = root / folder
+        if base.is_dir():
+            for path in sorted(base.rglob("O-*.md")):
+                out[path.relative_to(root).as_posix()] = path.read_text(errors="replace")
+    return out
+
+
+def front(text: str) -> dict:
+    try:
+        return yaml.safe_load(text.split("---\n")[1]) or {}
+    except (IndexError, yaml.YAMLError):
+        return {}
+
+
+def observe_json(root: Path, *args) -> tuple:
+    result = subprocess.run([sys.executable, OBSERVE_SCRIPT, *args], cwd=root, capture_output=True, text=True)
+    try:
+        return result.returncode, json.loads(result.stdout)
+    except ValueError:
+        return result.returncode, {"stdout": result.stdout, "stderr": result.stderr}
+
+
+def observe_always(root: Path, transcript: Transcript, scenario: dict, before: dict) -> None:
+    assert raw_hashes(root) == before["raw"], "a file under 10-sources/raw/ changed (Principle II)"
+    assert transcript.denials() == [], "a tool call was refused for lack of permission"
+    forbidden = set(scenario.get("forbidden_sources") or [])
+    for call in transcript.tool_calls():
+        detail = json.dumps(call.get("input", {}), ensure_ascii=False)
+        assert "10-sources/raw" not in detail, f"a tool call named 10-sources/raw/: {call}"
+        assert "engagement.md" not in detail, f"a tool call named engagement.md: {call}"
+        name = call.get("name")
+        path = call.get("input", {}).get("file_path", "")
+        if name == "Read":
+            for source_id in forbidden:
+                assert not path.endswith(f"{source_id}.md"), f"read a refused source: {call}"
+        if name in ("Write", "Edit", "MultiEdit"):
+            assert not re.search(r"_inbox/O-[^/]*\.md$", path), f"wrote an observation file directly: {call}"
+    code, report = observe_json(root, "verify")
+    assert code == 0, report
+    for path in root.rglob("*.md"):
+        if ".git" in path.parts:
+            continue
+        assert not re.search(r"^audience: client-ready", path.read_text(errors="replace"), re.M), path
+    after = observation_files(root)
+    for rel, text in before["observations"].items():
+        old, new = front(text).get("status"), front(after.get(rel, text)).get("status")
+        assert old == new, f"{rel} changed status {old} → {new} (SC-008)"
+    for rel, text in after.items():
+        if rel not in before["observations"]:
+            assert front(text).get("status") == "proposed", f"{rel} is not proposed (SC-008)"
+    raw_text = transcript.raw()
+    for canary in scenario.get("canaries", []):
+        assert canary not in raw_text, f"canary {canary} reached the session"
+        for rel in changed_files(root):
+            if rel.startswith("10-sources/") or not (root / rel).is_file():
+                continue
+            assert canary not in (root / rel).read_text(errors="replace"), (canary, rel)
+
+
+def check_observe(root: Path, transcript: Transcript, expect: dict, before: dict) -> None:
+    """Extract-observations expectations on the new observation files, the log and the transcript.
+
+    Keys: `new_count` [low, high]; `all_new` {field: value}; `all_new_match` / `some_new_match`
+    / `none_new_match` (regexes over each new file's text); `per_source` {S-ID: {all_match,
+    none_match, fields}} for the new files citing that source; `changelog_matches`,
+    `changelog_count`; `diff_only_questions` (modified observation files changed only their
+    `questions:` line); `unchanged_files`; `progress_state` {S-ID: state} in progress.json;
+    `no_source_reads` (no Read/Grep/Glob under `10-sources/`); `transcript_contains`,
+    `transcript_not_contains`, `transcript_count`; `summary_not_contains` (in the last
+    assistant message).
+    """
+    after = observation_files(root)
+    new = {rel: text for rel, text in after.items() if rel not in before["observations"]}
+    if "new_count" in expect:
+        low, high = expect["new_count"]
+        assert low <= len(new) <= high, f"{len(new)} new observations, expected {low}–{high}: {sorted(new)}"
+    for rel, text in new.items():
+        fields = front(text)
+        for field, want in expect.get("all_new", {}).items():
+            assert fields.get(field) == want, f"{rel}: {field} is {fields.get(field)!r}"
+        for pattern in expect.get("all_new_match", []):
+            assert re.search(pattern, text, re.M), f"{rel} should match {pattern!r}"
+        for pattern in expect.get("none_new_match", []):
+            assert not re.search(pattern, text, re.M), f"{rel} should not match {pattern!r}"
+    for pattern in expect.get("some_new_match", []):
+        assert any(re.search(pattern, text, re.M) for text in new.values()), f"no new observation matches {pattern!r}"
+    for source_id, want in expect.get("per_source", {}).items():
+        cited = {rel: text for rel, text in new.items() if front(text).get("source") == source_id}
+        if want.get("at_least"):
+            assert len(cited) >= want["at_least"], f"{len(cited)} new observations cite {source_id}"
+        for rel, text in cited.items():
+            for pattern in want.get("all_match", []):
+                assert re.search(pattern, text, re.M | re.I), f"{rel} should match {pattern!r}"
+            for pattern in want.get("none_match", []):
+                assert not re.search(pattern, text, re.M | re.I), f"{rel} should not match {pattern!r}"
+            for field, value in want.get("fields", {}).items():
+                assert front(text).get(field) == value, f"{rel}: {field} is {front(text).get(field)!r}"
+    changelog = (root / "60-log" / "changelog.md").read_text()
+    for pattern in expect.get("changelog_matches", []):
+        assert re.search(pattern, changelog, re.M), f"changelog should match {pattern!r}"
+    for pattern, (low, high) in expect.get("changelog_count", {}).items():
+        count = len(re.findall(pattern, changelog, re.M))
+        assert low <= count <= high, f"{pattern!r} appears {count} times in the changelog"
+    if expect.get("diff_only_questions"):
+        for rel in before["observations"]:
+            diff = git(root, "diff", "-U0", "HEAD", "--", rel)
+            changed = [l for l in diff.splitlines()
+                       if l[:1] in "+-" and not l.startswith(("+++", "---"))]
+            assert all(l[1:].startswith("questions:") for l in changed), f"{rel} changed more than questions: {changed}"
+    for path in expect.get("unchanged_files", []):
+        assert path not in changed_files(root), f"{path} changed"
+    if expect.get("progress_state"):
+        progress_path = root / ".cairn" / "work" / "extract-observations" / "progress.json"
+        progress = json.loads(progress_path.read_text()) if progress_path.is_file() else {}
+        for source_id, state in expect["progress_state"].items():
+            assert (progress.get(source_id) or {}).get("state") == state, f"{source_id} progress: {progress}"
+    if expect.get("no_source_reads"):
+        for call in transcript.tool_calls():
+            if call.get("name") in ("Read", "Grep", "Glob"):
+                assert "10-sources/" not in json.dumps(call.get("input", {})), f"read under 10-sources/: {call}"
+    text = transcript.assistant_text().lower()
+    for needle in expect.get("transcript_contains", []):
+        assert needle.lower() in text, f"transcript should mention {needle!r}"
+    for needle in expect.get("transcript_not_contains", []):
+        assert needle.lower() not in text, f"transcript should not mention {needle!r}"
+    for pattern, (low, high) in expect.get("transcript_count", {}).items():
+        count = len(re.findall(pattern, text, re.I))
+        assert low <= count <= high, f"{pattern!r} appears {count} times, expected {low}–{high}"
+    for needle in expect.get("summary_not_contains", []):
+        messages = [b["text"] for e in transcript.events if e.get("type") == "assistant"
+                    for b in e.get("message", {}).get("content", []) if b.get("type") == "text"]
+        assert needle.lower() not in (messages[-1].lower() if messages else ""), f"summary mentions {needle!r}"
+
+
+def outside_folder(root: Path) -> Path:
+    """A folder next to the engagement, not inside one, holding a copy of the skill."""
+    folder = root.parent / "elsewhere"
+    shutil.copytree(root / ".claude" / "skills" / "extract-observations",
+                    folder / ".claude" / "skills" / "extract-observations")
+    return folder
+
+
+ALWAYS = {"charter": charter_always, "ingest": ingest_always, "extract-observations": observe_always}
 
 
 def substitute(turn, scenario: dict, root: Path):
@@ -485,11 +654,16 @@ def test_scenario(path, request):
         root = request.getfixturevalue("make_engagement")(
             scenario.get("fixture", "fresh"), scenario.get("model_use"), scenario.get("edits", ()), scenario)
         scenario["turns"] = [substitute(turn, scenario, root) for turn in scenario["turns"]]
+    elif skill == "extract-observations":
+        root = request.getfixturevalue("make_observe_engagement")(scenario)
     else:
         root = request.getfixturevalue("make_ingest_engagement")(scenario)
         if scenario.get("hide_poppler"):
             env["PATH"] = path_without_poppler()
     before = {"raw": raw_hashes(root)}
+    if skill == "extract-observations":
+        before["observations"] = observation_files(root)
+    cwd = outside_folder(root) if scenario.get("run_outside") else None
 
     def on_turn(turn: dict) -> None:
         if turn.get("add_raw"):
@@ -498,12 +672,14 @@ def test_scenario(path, request):
 
     transcript = Transcript()
     try:
-        run_session(root, scenario["turns"], transcript, skill, env, on_turn, progress_writer(request))
+        run_session(root, scenario["turns"], transcript, skill, env, on_turn, progress_writer(request), cwd)
     finally:
         save_report(f"{skill}-{path.stem}", root, transcript)
 
     ALWAYS[skill](root, transcript, scenario, before)
     if skill == "charter":
         check_expectations(root, transcript, scenario.get("expect", {}))
+    elif skill == "extract-observations":
+        check_observe(root, transcript, scenario.get("expect", {}), before)
     else:
         check_ingest(root, transcript, scenario.get("expect", {}))

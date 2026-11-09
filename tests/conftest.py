@@ -95,3 +95,54 @@ def fixture_assets(
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_text(text)
     return {"CAIRN_ASSETS_DIR": str(root), "CAIRN_FRAMEWORK_VERSION": version}
+
+
+QUESTION_ENTRY = """## {id}: {title}
+
+```yaml
+id: "{id}"
+type: question
+title: {title_json}
+status: {status}
+origin: consultant-note
+confidence: medium
+confidence_reason: "Raised by the sponsor at kickoff"
+inference_confirmed: false
+audience: internal
+supports: []
+contradicts: []
+derived_from: []
+supersedes: []
+clarifies: []
+change_reason: ""
+change_trigger: ""
+created: "2026-11-03"
+priority: medium
+raised_by: "Test Lead"
+hypotheses: []
+```
+
+{title}.
+"""
+
+QUESTIONS_HEAD = ("---\ntype: collection\nholds: question\n---\n\n# Questions\n\n"
+                  "The key questions the engagement must answer.\n\n")
+
+# The three synthetic questions the extract-observations tests and fixtures use.
+OBSERVE_QUESTIONS = [
+    {"id": "Q-001", "title": "What does fulfilment cost per order"},
+    {"id": "Q-002", "title": "Is north-site staffing enough"},
+    {"id": "Q-003", "title": "Why is fulfilment slow"},
+]
+
+
+def questions_md(questions) -> str:
+    """A `00-charter/questions.md` holding `questions` ({id, title, status}); none → the seed text."""
+    import json as _json
+
+    if not questions:
+        return QUESTIONS_HEAD + "No questions yet.\n"
+    return QUESTIONS_HEAD + "\n".join(
+        QUESTION_ENTRY.format(id=q["id"], title=q["title"], title_json=_json.dumps(q["title"]),
+                              status=q.get("status", "active"))
+        for q in questions)

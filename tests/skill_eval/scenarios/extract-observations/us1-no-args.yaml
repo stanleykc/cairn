@@ -1,0 +1,7 @@
+name: No arguments lists eligible sources and asks which (US1, FR-003)
+fixture: golden/us1
+turns:
+  - "/extract-observations"
+expect:
+  new_count: [0, 0]
+  transcript_contains: ["S-001", "S-004"]

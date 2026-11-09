@@ -1,0 +1,90 @@
+{
+  "steering": {
+    "focus": [
+      "Q-003"
+    ],
+    "exclude": [
+      "§ Appendix",
+      "p. 3–3"
+    ],
+    "perspective": "warehouse manager"
+  },
+  "drafts": [
+    {
+      "source": "S-005",
+      "locator": "§ Fulfilment review > Findings",
+      "quote": "Orders released after 3 pm miss the same-day carrier pickup.",
+      "claim": "The draft fulfilment review says orders released after 3 pm miss the same-day carrier pickup.",
+      "title": "Orders released after 3 pm miss same-day pickup",
+      "questions": [
+        "Q-003"
+      ],
+      "confidence": "medium",
+      "confidence_reason": "client's own draft review",
+      "translated": false
+    },
+    {
+      "source": "S-005",
+      "locator": "§ Fulfilment review > Findings",
+      "quote": "The packing team at North 2 works one shift on Fridays.",
+      "claim": "The draft fulfilment review says the packing team at North 2 works one shift on Fridays.",
+      "title": "North 2 packing works one shift on Fridays",
+      "questions": [
+        "Q-002"
+      ],
+      "confidence": "medium",
+      "confidence_reason": "client's own draft review",
+      "translated": false
+    },
+    {
+      "source": "S-005",
+      "locator": "§ Appendix > Detail",
+      "quote": "Carrier pickup times were taken from the transport team's schedule.",
+      "claim": "The draft fulfilment review says carrier pickup times were taken from the transport team's schedule.",
+      "title": "Pickup times came from the transport schedule",
+      "questions": [
+        "Q-003"
+      ],
+      "confidence": "medium",
+      "confidence_reason": "client's own draft review",
+      "translated": false
+    },
+    {
+      "source": "S-001",
+      "locator": "p. 3",
+      "quote": "Review carrier pickup windows with the transport team.",
+      "claim": "The FY25 operations review lists reviewing carrier pickup windows with the transport team as a next step.",
+      "title": "Review asks to check carrier pickup windows",
+      "questions": [
+        "Q-003"
+      ],
+      "confidence": "medium",
+      "confidence_reason": "client's own next steps",
+      "translated": false
+    },
+    {
+      "source": "S-005",
+      "locator": "§ Fulfilment review",
+      "quote": "Draft for the north sites, October 2026.",
+      "claim": "The draft fulfilment review says it is a draft for the north sites, dated October 2026.",
+      "title": "Review is an October 2026 draft for the north sites",
+      "questions": [],
+      "confidence": "medium",
+      "confidence_reason": "client's own draft review",
+      "translated": false
+    },
+    {
+      "source": "S-001",
+      "locator": "p. 2",
+      "quote": "Order-to-ship time rose in both northern sites during Q3.",
+      "claim": "The FY25 operations review says order-to-ship time rose in both northern sites during Q3.",
+      "title": "Order-to-ship time rose at both northern sites in Q3",
+      "questions": [
+        "Q-003"
+      ],
+      "confidence": "medium",
+      "confidence_reason": "client's own review; method not stated",
+      "translated": false
+    }
+  ]
+}

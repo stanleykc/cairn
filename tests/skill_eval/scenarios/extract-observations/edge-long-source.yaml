@@ -1,0 +1,9 @@
+name: A long source stops near 40 observations and records where (US4, R12)
+fixture: golden/long
+turns:
+  - "/extract-observations S-001"
+expect:
+  new_count: [25, 55]
+  progress_state: {S-001: stopped}
+  transcript_contains: ["p. "]
+  transcript_count: {"stop": [1, 50]}
