@@ -74,29 +74,52 @@ script checks what can be checked mechanically.
   extraction would stall the pipeline. Questions stay `proposed` until the consultant
   approves them, and observations do too, so nothing is promoted silently.
 
-## R6. Re-running a finished source for a new question
+## R6. Re-running a finished source (FR-013, US3)
 
 - **Decision**: `progress S-ID --done` also records `questions`: the usable question IDs at
   the time of the pass. `status` adds `new_questions` to each source: the usable questions
-  not in that list. Nothing in `prepare` blocks a `done` source (true already). The skill
-  instructions say: a source marked done with `new_questions` can be re-run with
-  `for <new Q>`. Without a focus, the skill suggests that run instead of a full re-pass.
-- **Rationale**: This gives US3 a precise prompt ("S-001 was processed before Q-005
-  existed"), with no new state machine. The existing duplicate and rejected-claim checks
-  (005 FR-022) and the retag offer (005 FR-023) already cover the rest.
-- **Alternatives considered**: storing passed-over passages for later re-use. FR-010 forbids
-  it, and the source itself is the record.
+  not in that list. Nothing in `prepare` blocks a `done` source (true already), and no
+  `--confirmed` override is needed.
+  - **With a focus** (`for Q-005`): extract against the focus questions, as before.
+  - **With no focus**: check the source again against **every** current usable question,
+    without asking for confirmation (clarification 2026-11-09). The 005 duplicate and
+    rejected-claim checks (005 FR-022) mean only claims that no existing observation holds
+    are proposed.
+  - **Retagging**: when the re-run source has `new_questions`, offer to tag existing
+    observations that bear on them, and ask once (005 FR-023).
+  - **No arguments**: Step 1 also lists `done` sources that have `new_questions`, for
+    example "S-001 — processed before Q-005", so the consultant knows a re-run is worth it.
+- **Rationale**: The consultant asked for the source by name, so a confirmation step adds
+  friction without protecting anything. Re-checking is safe because duplicates are refused
+  by the script, and every proposal is still `proposed`. `new_questions` gives the no-args
+  prompt a precise reason, with no new state machine.
+- **Alternatives considered**: asking "focus on the new questions?" before a plain re-run
+  (the earlier draft of this plan; dropped because the clarification answered it); storing
+  passed-over passages for later re-use (FR-010 forbids it, and the source itself is the
+  record).
 
-## R7. Passed-over material
+## R7. Passed-over material (FR-009, FR-010)
 
-- **Decision**: The skill keeps passed-over topics only in its working memory for the
-  session, and reports them in the summary's "Passed over" section: a short label and a
-  locator or range per topic. It adds one "may matter → `/charter`" line where relevant.
-  The script records nothing about them.
-- **Rationale**: FR-009 and FR-010. The consultant sees what was left out, and no file or log
-  grows from off-charter material.
+- **Decision**: The skill keeps passed-over material only in its working memory for the
+  session, and reports it in the summary's "Passed over" section:
+  - **Every distinct off-charter topic longer than a passing remark** (about 3 or more
+    turns, or a paragraph or more) gets its own line: a short label and a locator or
+    locator range. There is no "main topics only" cut.
+  - **Shorter asides** (one or two turns, a sentence or two) are not labelled. They are
+    counted on one line: `other brief remarks: N`.
+  - **Unsure** claims are left out and land in the same section, labelled or counted by
+    the same size rule.
+  - One `May matter, fits no current question: … → consider /charter` line per topic that
+    looks important but fits no question. The skill never creates the question.
+
+  The script records nothing about passed-over material.
+- **Rationale**: FR-009 as clarified on 2026-11-09. Listing every substantial topic keeps
+  the consultant in control of what was dropped; grouping brief asides stops the list from
+  growing back into the noise this feature removes. The "about 3 turns or a paragraph" rule
+  is a judgment the assistant applies, so it lives in instructions (constitution I).
 - **Alternatives considered**: a `passed_over` list in the drafts file (it would persist in
-  `.cairn/work/`, against FR-010); a per-source report file (same issue).
+  `.cairn/work/`, against FR-010); a per-source report file (same issue); a script check on
+  the summary (the summary isn't a file, and the size rule is approximate by design).
 
 ## R8. Granularity (FR-008)
 
@@ -106,7 +129,8 @@ script checks what can be checked mechanically.
   quote and is not given its own observation. The script doesn't enforce a count.
 - **Rationale**: A numeric cap would cut relevant evidence from dense sources. Relevance plus
   the "each part relevant on its own" rule cuts the fragments seen in the trial (for example
-  five observations about one anecdote).
+  five observations about one anecdote). The density flag (R11) is a prompt to the
+  consultant, not a cap.
 - **Alternatives considered**: a per-unit or per-source cap (arbitrary, and it hurts dense
   documents); a `same-unit` warning (noisy for tables, where several rows are rightly
   separate observations).
@@ -121,6 +145,8 @@ script checks what can be checked mechanically.
   - a synthetic table of relevant and off-charter claims (introductions, past employers,
     anecdotes, office tools, scheduling, wishes not covered by a question);
   - the "unsure → leave out and list under Passed over" rule;
+  - the "Passed over" size rule (R7): label topics of about 3 or more turns or a paragraph
+    or more; count shorter asides;
   - relevance-reason examples.
 
   Rewrite "Tagging and steering" to remove "keep every factual claim" and "Untagged".
@@ -134,17 +160,53 @@ script checks what can be checked mechanically.
   - **Unit tests** (`tests/unit/test_observe_script.py`): the new refusals (`untagged`,
     `relevance-missing`, `relevance-unlinked`, `relevance-restates-claim`,
     `question-retired`, `no-questions`); `status` fields (`usable_questions`,
-    `charter_status`, `new_questions`); `progress --done` recording questions; `verify`
-    accepting observations without `relevance`.
+    `charter_status`, `new_questions`); `progress --done` recording questions; `prepare`
+    on a `done` source succeeding without `--confirmed`; `prepare`'s `density_limit` for a
+    transcript, a paged document, a tiny source (floor of 1) and an unpaged document
+    (`null`); `verify` accepting observations without `relevance`.
   - **Golden fixtures**: add `relevance` to every expected `O-###.md` and to the drafts
     files.
   - **New synthetic fixture** `golden/us6-relevance`: a meeting transcript with seeded
-    relevant claims and seeded off-charter topics, plus an answer key.
+    relevant claims, seeded off-charter topics of 3 or more turns, and a known number of
+    one- or two-turn asides, plus an answer key.
+  - **New synthetic fixture** `golden/us8-density`: a short transcript in which nearly
+    every turn bears on a question, so an honest run exceeds `density_limit`.
   - **Skill-eval scenarios**: a new `us6-relevance.yaml`, using the existing `per_source`
-    `all_match` and `none_match` and `none_new_match` keys; `us2-no-questions` updated to
-    expect a stop; a new `us7-new-question-rerun.yaml`.
+    `all_match` and `none_match` and `none_new_match` keys, plus `transcript_contains`
+    for `Passed over`, each seeded topic's label keyword and `other brief remarks`;
+    `us2-no-questions` updated to expect a stop; a new `us7-new-question-rerun.yaml`
+    (plain `/extract-observations S-001` on a `done` source after a question is added:
+    no confirmation asked, only the new claims proposed); a new `us8-density.yaml`
+    (`transcript_contains` "narrower focus", and no relevant seeded claim dropped).
   - **Bundle test**: the 005 contracts path stays. The contract text that changes is in
     this feature's contracts, and the 005 contracts are amended to match.
 - **Rationale**: Mechanical rules are tested deterministically. Relevance itself is tested
   through skill evals against an answer key (SC-001, SC-002, SC-006). SC-003 to SC-005 are
   the consultant's manual check on the trial engagement, which never enters the repository.
+
+## R11. Density flag (FR-016)
+
+- **Decision**: No hard limit. `prepare` returns `density_limit`, computed by the script from
+  the source's units:
+  - a source with turn units: `max(1, floor(turns / 10))`;
+  - a paged document: `max(1, pages)`;
+  - anything else (sections, paragraphs, slides without pages): `null`, and no flag.
+
+  The skill adds up the `written` counts from `add` for that source in this run. When the
+  total is greater than `density_limit`, the summary shows one line per source:
+  `High density: S-001 — 31 observations from 120 turns (flag above 12); consider a
+  narrower focus, e.g. /extract-observations S-001 for Q-002`. Nothing is dropped or
+  refused because of the count, and the 005 natural break at about 40 observations per
+  session still applies.
+- **Rationale**: "More than one per 10 turns, or one per page" is a fixed count rule, so
+  the script computes the threshold (constitution I: scripts where a deterministic check is
+  more reliable). The count for *this run* is already in the assistant's hands from `add`'s
+  answers, so no new run state is needed. For integer counts, `count > floor(n / 10)` is the
+  same test as `count > n / 10`. The floor of 1 stops a five-turn source from flagging its
+  first observation. Spec FR-016 defines no rule for unpaged, unturned sources, so none is
+  invented.
+- **Alternatives considered**: computing the flag in `progress` (a run stopped at a natural
+  break would need a per-run counter in `progress.json`); a refusal from `add` past the
+  limit (that is the hard cap the clarification ruled out); scaling the limit to only the
+  units processed when the run stops early or excludes sections (more precise, but the flag
+  is advisory and the simpler rule errs towards not flagging).

@@ -35,6 +35,19 @@ New refusal, checked after the policy gate and before the source gate:
 |---|---|---|
 | 6 | `no-questions` | `{"error": "no-questions", "message": "The charter has no active or proposed questions. Run /charter first."}` |
 
+A `done` source is not refused and needs no `--confirmed` (FR-013); this is unchanged
+from 005 and now covered by a test.
+
+One key is added to the output:
+
+```json
+{"source": {"…": "…"}, "units": ["…"], "density_limit": 12}
+```
+
+- `density_limit`: `max(1, floor(turns / 10))` when the units are transcript turns,
+  `max(1, pages)` when they are pages, otherwise `null`. Counted over the whole source,
+  before steering exclusions (research R11).
+
 ## `add DRAFTS.json [--dry-run] [--confirmed]`
 
 - Exits 6 with `no-questions` (same payload as `prepare`) before checking any draft.

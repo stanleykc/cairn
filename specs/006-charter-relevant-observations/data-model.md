@@ -55,10 +55,29 @@ A `done` entry also records the usable questions at the time of the pass:
 Entries written before this change have no `questions`. `status` then reports
 `new_questions: []`, because there is no baseline. The skill does not guess.
 
-## 5. Passed-over topic (session only, never stored)
+## 5. Passed-over material (session only, never stored)
 
-`{label, locator_range}`, held by the assistant during the session and printed in the
-summary. No file, log or work-file entry (FR-010).
+Held by the assistant during the session and printed in the summary. No file, log or
+work-file entry (FR-010).
+
+- **Passed-over topic**: `{label, locator_range}` for each distinct off-charter topic
+  longer than a passing remark (about 3 or more turns, or a paragraph or more). Optional
+  flag `may_matter` → printed with "consider /charter".
+- **Brief remarks**: a single count of shorter asides, printed as `other brief remarks: N`.
+  Not labelled.
+
+## 5a. Density limit (derived, not stored)
+
+Returned by `prepare` as `density_limit` (research R11):
+
+| Source units | `density_limit` |
+|---|---|
+| turns (`T#` units) | `max(1, floor(turns / 10))` |
+| pages (`p. #` units) | `max(1, pages)` |
+| other | `null` (no flag) |
+
+The skill flags a source in the summary when the observations `add` wrote for it in this run
+exceed `density_limit`. It is never a refusal and never drops a draft (FR-016).
 
 ## 6. Refusal and warning codes
 
@@ -70,6 +89,8 @@ summary. No file, log or work-file entry (FR-010).
 | `relevance-restates-claim` | refusal | normalised `relevance` equals, or is contained in, the normalised claim |
 | `question-retired` | refusal (was a warning) | a tag names a `superseded` or `rejected` question |
 | `no-questions` | exit 6 on `prepare` and `add` | no usable questions in the charter |
+
+No code is added for density: it is a summary line, not a refusal or warning.
 
 `question-retired` leaves `WARNING_CODES`, so it can no longer be accepted with
 `accept_warnings`.

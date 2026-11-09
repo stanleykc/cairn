@@ -15,12 +15,18 @@ It keeps 005's split: **the assistant judges, the script checks** (research R1).
 - **The assistant** reads the charter (questions, hypotheses, assumptions, scope). It
   applies a written relevance test to each candidate claim, and drafts only relevant claims.
   Each draft gets a new one-line `relevance` reason that names every tagged question.
-  Off-charter material is listed in the summary under "Passed over" and nowhere else.
+  Off-charter material is listed in the summary under "Passed over" and nowhere else:
+  every topic of about 3 or more turns (or a paragraph) by label and locator range, and
+  shorter asides as one counted line. The summary also flags a source whose count exceeds
+  the density limit and suggests a narrower focus; nothing is capped.
 - **`observe.py`** enforces what can be checked mechanically. It refuses drafts that are
   untagged, have no `relevance`, have a `relevance` that doesn't name every tagged question
   or that restates the claim, or are tagged to a retired question. `prepare` and `add` stop
-  when the charter has no usable questions. `status` reports the charter's status and which
-  questions a finished source predates, so that a re-run for a new question is easy (US3).
+  when the charter has no usable questions. `prepare` returns `density_limit` (one per 10
+  turns, or one per page). `status` reports the charter's status and which questions a
+  finished source predates. A plain re-run of a finished source re-checks it against every
+  current question without asking, and the existing duplicate checks keep it to new claims
+  (US3).
 
 No migration. 005-era observations stay valid. The new template field reaches existing
 engagements through `cairn refresh`.
@@ -48,7 +54,7 @@ per draft
 **Constraints**: constitution I (scripts only for deterministic checks), III (atomic claims,
 no interpretation in the claim), VII (agents propose), VIII (synthetic fixtures only)
 
-**Scale/Scope**: one skill (SKILL.md and two reference files), one script (about 6 functions
+**Scale/Scope**: one skill (SKILL.md and two reference files), one script (about 7 functions
 touched), one template line, test updates; no new commands
 
 ## Constitution Check
@@ -57,19 +63,21 @@ touched), one template line, test updates; no new commands
 
 | Principle | Check | Status |
 |---|---|---|
-| I. Text-first | Still plain files. The script gains checks only where they are deterministic (tags present, IDs named); the relevance judgment stays in instructions. | Pass |
+| I. Text-first | Still plain files. The script gains checks only where they are deterministic (tags present, IDs named, the density threshold from unit counts); the relevance judgment and the "passing remark" size rule stay in instructions. | Pass |
 | II. Originals immutable | No change; the skill reads only `10-sources/extracted/`. | Pass |
 | III. Atomic, cited evidence | The claim stays one claim with no interpretation. The relevance reason is the skill's judgment, held in its own field (like `confidence_reason`), never in the claim. The constitution's skill rule for `extract-observations` (atomic, no interpretation) is preserved. | Pass |
 | IV. Provenance | `origin` and `confidence` are unchanged. `relevance` is labelled as the skill's reasoning in the template comment. | Pass |
 | V. Stable IDs | No change to ID assignment. Passed-over material gets no IDs. | Pass |
 | VI. Never delete | Existing observations are not changed or backfilled. `tag` stays logged. | Pass |
-| VII. Agents propose | Output is still `proposed` in `_inbox/`. The consultant sees what was passed over and decides whether to add a question. The skill never creates questions. | Pass |
+| VII. Agents propose | Output is still `proposed` in `_inbox/`. The consultant sees what was passed over and decides whether to add a question. The skill never creates questions. A plain re-run of a finished source proposes only new claims; retagging still asks first. The density flag suggests a narrower focus but never drops a draft. | Pass |
 | VIII. Confidentiality | The trial engagement is cited only anonymously and by counts. All fixtures and examples are synthetic. Passed-over material isn't persisted. | Pass |
 | Skill Contract 1–6 | Unchanged. Templates are still used, so the new field comes from `_templates/observation.md`. | Pass |
 | Gate 1 (rebuild key findings) | Risk: fewer observations could lower recall. Mitigation: the relevance test includes hypotheses and assumptions, "unsure" is reported under "Passed over", and re-runs for new questions (R6). Measured by SC-002 and SC-006. | Pass, risk tracked |
 
-**Post-design re-check**: the design adds one field, one progress key and three `status`
-keys, all plain text. No violations, so Complexity Tracking is empty.
+**Post-design re-check** (after the 2026-11-09 clarifications): the design adds one field,
+one progress key, three `status` keys and one `prepare` key, all plain text. The
+passed-over list and the density flag live only in the summary, so FR-010 holds. No
+violations, so Complexity Tracking is empty.
 
 ## Project Structure
 
@@ -98,7 +106,8 @@ src/cairn/assets/
     ├── SKILL.md                                   # description, Never #9, Steps 1–4, 6
     ├── reference/writing-observations.md          # + Relevance section; rewrite Tagging; granularity
     └── scripts/observe.py                         # SKILL_FIELDS, DRAFT_REQUIRED, check_relevance,
-                                                   # check_questions, no-questions gate, status, progress, verify
+                                                   # check_questions, no-questions gate, status, progress,
+                                                   # prepare density_limit, verify
 src/cairn/__init__.py                              # version bump (template change)
 
 specs/
@@ -111,11 +120,13 @@ tests/
 ├── integration/test_observe_bundle.py             # description, NEW_FIELDS + relevance
 ├── integration/test_init.py                       # template field present
 ├── fixtures/observe/golden/us1–us4/               # drafts.json and expected/O-*.md gain relevance
-├── fixtures/observe/golden/us6-relevance/         # new synthetic transcript + answer key
+├── fixtures/observe/golden/us6-relevance/         # new synthetic transcript + answer key (long topics + brief asides)
+├── fixtures/observe/golden/us8-density/           # new short, dense, all-relevant transcript
 └── skill_eval/scenarios/extract-observations/
     ├── us2-no-questions.yaml                      # expect stop, never_read S-001
-    ├── us6-relevance.yaml                         # new
-    └── us7-new-question-rerun.yaml                # new
+    ├── us6-relevance.yaml                         # new: relevance, Passed over, brief-remarks count
+    ├── us7-new-question-rerun.yaml                # new: plain re-run of a done source, no confirmation
+    └── us8-density.yaml                           # new: density flag, nothing dropped
 ```
 
 **Structure Decision**: single package. All changes are inside the existing
@@ -132,15 +143,18 @@ tests/
    - the `no-questions` gate in `prepare` and `add`;
    - the `status` keys;
    - `progress --done` records `questions`;
+   - `prepare` returns `density_limit`, and still accepts a `done` source without
+     `--confirmed`;
    - `verify` tolerates a missing `relevance`.
 
    Unit tests are written first, for each item.
 3. **Skill text**: SKILL.md and writing-observations.md, per
-   contracts/extract-observations-skill.md and research R8–R9.
+   contracts/extract-observations-skill.md and research R6–R9 and R11 (plain re-run,
+   passed-over size rule, density line).
 4. **Fixtures**: add `relevance` to the us1–us4 drafts and expected files; build the
-   synthetic `us6-relevance` transcript and answer key.
-5. **Skill evals**: update `us2-no-questions`; add `us6-relevance` and
-   `us7-new-question-rerun`.
+   synthetic `us6-relevance` transcript and answer key, and the `us8-density` transcript.
+5. **Skill evals**: update `us2-no-questions`; add `us6-relevance`,
+   `us7-new-question-rerun` and `us8-density`.
 6. **Docs**: amend the 005 spec, data model and contracts, and the 001 data model, with
    pointers to 006.
 7. **Manual check**: run the quickstart §3 on the trial engagement (consultant).
