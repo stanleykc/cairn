@@ -33,6 +33,17 @@ proposing it.
 
 - Decision (from the feature request): claims that don't relate to the charter are not
   captured as observations. There is no "every claim" mode. This replaces 005's R1.
+- Q: When the consultant re-runs the skill with no focus on a source already fully processed,
+  should it check the source again against all current charter questions? → A: Yes. A plain
+  re-run checks against every current question and proposes only claims no existing
+  observation holds. It does not ask for confirmation.
+- Q: Should the skill limit or flag how many observations one source produces? → A: No hard
+  limit; the relevance test decides. When a source's count is unusually high, the summary
+  flags it and suggests a narrower focus.
+- Q: How complete should the "Passed over" list in the summary be? → A: Every distinct
+  off-charter topic longer than a passing remark (about 3 or more turns, or a paragraph or
+  more), each with a label and locator range. Brief asides are grouped into one "other brief
+  remarks" line with a count.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -85,9 +96,9 @@ became an observation, and that the seeded relevant claims did.
 ### User Story 2 - See what was passed over (Priority: P2)
 
 After the run, the consultant wants to be sure nothing important was dropped. The summary
-reports how much of the source the skill passed over as off-charter, and the main topics in
-that material: "Passed over as off-charter: introductions (T1–T12), a past project at
-another company (T140–T171), office tools (T88–T93)". The consultant can see at a glance
+reports each off-charter topic the skill passed over: "Passed over as off-charter:
+introductions (T1–T12), a past project at another company (T140–T171), office tools
+(T88–T93); other brief remarks: 6". The consultant can see at a glance
 what was left out and why. If something there matters after all, they can add a question
 with `/charter` and re-run, or write an observation themselves.
 
@@ -96,20 +107,25 @@ drops material silently would take that decision away. A short account of what w
 over keeps the consultant in control, without adding any files.
 
 **Independent Test**: Run the skill on the synthetic transcript from US1. Check that the
-summary has a "Passed over" section that names each seeded off-charter topic with its
-locator range. Check that no files were written for them.
+summary has a "Passed over" section that names each seeded off-charter topic of 3 or more
+turns with its locator range, and counts the seeded brief asides on one "other brief
+remarks" line. Check that no files were written for them.
 
 **Acceptance Scenarios**:
 
 1. **Given** a run that passed over material, **When** the skill reports, **Then** the
-   summary lists the main passed-over topics, each with a short label and a locator or
-   locator range.
+   summary lists every distinct passed-over topic longer than a passing remark (about 3 or
+   more turns, or a paragraph or more), each with a short label and a locator or locator
+   range, and groups shorter asides into one "other brief remarks" line with a count.
 2. **Given** a passed-over topic, **When** it is listed, **Then** the skill writes no file,
    log entry or other record for it beyond the summary.
 3. **Given** passed-over material that looks important but fits no current question (for
    example a new risk the charter doesn't cover), **When** the skill reports, **Then** it
    says so in one line and suggests `/charter` to add a question. It doesn't create the
    question itself.
+4. **Given** a source that yields more observations than the density threshold (FR-016),
+   **When** the skill reports, **Then** the summary flags that source's count and suggests
+   re-running with a narrower focus. Nothing is dropped because of the count.
 
 ---
 
@@ -138,6 +154,10 @@ observation.
 2. **Given** a re-run, **When** a claim is already held by an existing observation, **Then**
    the skill doesn't propose it again, but may offer to tag the existing observation with
    the new question (as in 005, FR-023).
+3. **Given** a source already processed in full and a question added since, **When** the
+   consultant re-runs it with no focus, **Then** the skill checks it against every current
+   question without asking for confirmation, and proposes only claims that no existing
+   observation holds.
 
 ---
 
@@ -218,8 +238,10 @@ ingested source. Check that it reads no source, writes nothing, and points to `/
   exhaustive split of every sentence. It splits a passage into several observations only
   when each part is relevant on its own (refines 005's "one claim per observation"
   guidance, without changing the one-claim rule).
-- **FR-009**: The session summary MUST include a "Passed over" section. It lists the main
-  off-charter topics, each with a short label and a locator or locator range, and notes
+- **FR-009**: The session summary MUST include a "Passed over" section. It lists every
+  distinct off-charter topic longer than a passing remark (about 3 or more turns, or a
+  paragraph or more), each with a short label and a locator or locator range; shorter
+  asides are grouped into one "other brief remarks" line with a count. It also notes
   briefly any passed-over material that looks important but fits no current question,
   suggesting `/charter`. The summary MUST NOT include an "Untagged" section.
 - **FR-010**: The skill MUST NOT write any file, log entry or record for passed-over material
@@ -228,16 +250,23 @@ ingested source. Check that it reads no source, writes nothing, and points to `/
   before reading any source, write nothing, and suggest `/charter`.
 - **FR-012**: When the charter is not yet approved, the skill MUST extract against its
   proposed questions and say in the summary that the charter is unapproved.
-- **FR-013**: A source recorded as fully processed MUST still be extractable when the run
-  focuses on a question that has been added or changed since. Existing duplicate and
-  rejected-claim checks still apply (005 FR-022), and existing observations may still be
-  offered for retagging (005 FR-023).
+- **FR-013**: A source recorded as fully processed MUST still be extractable, without
+  override confirmation. With a focus, the skill extracts against the focus questions. With
+  no focus, it checks the source again against every current charter question. Existing
+  duplicate and rejected-claim checks still apply (005 FR-022), so only claims that no
+  existing observation holds are proposed. Existing observations may still be offered for
+  retagging (005 FR-023).
 - **FR-014**: The skill's guidance for consultants and its worked examples MUST define
   relevance, with examples of relevant and off-charter claims. The examples MUST be
   synthetic (constitution VIII).
 - **FR-015**: All other behaviour of 005 is unchanged: citation, exact passages, locators,
   speaker attribution, confidence caps, derived flags, steering, natural breaks, and the
   "Never" rules.
+- **FR-016**: The skill MUST NOT impose a hard limit on observations per source; the
+  relevance test alone decides what is proposed. When one run proposes more than one
+  observation per 10 transcript turns, or more than one per page for paged documents, the
+  summary MUST flag that source's count and suggest a narrower focus. The existing
+  per-session natural break (005) still applies.
 
 ### Key Entities
 
@@ -247,7 +276,7 @@ ingested source. Check that it reads no source, writes nothing, and points to `/
   candidate claim becomes an observation. It is judged against the charter's questions,
   hypotheses, assumptions and scope.
 - **Passed-over topic** (summary only, not stored): a label and a locator range for
-  material the skill left out as off-charter.
+  material the skill left out as off-charter. Brief asides are only counted, not labelled.
 
 ## Success Criteria *(mandatory)*
 
